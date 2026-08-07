@@ -12,10 +12,11 @@ Phase 1 is complete: the protected Terraform S3 state backend is deployed and it
 - Remote `main` protection: active; one approval, CODEOWNER review, stale-review dismissal, last-pusher separation, administrator enforcement, linear history, conversation resolution, and force-push/deletion blocking enabled.
 - Phase 1 backend: applied successfully; `7 added / 0 changed / 0 destroyed`; bootstrap state migrated to S3
 - Phase 2 primary network: complete; 35 resources from the initial apply plus six Free Tier-compatible NAT resources from the revised apply
-- AWS resources created: protected Terraform state backend and the 41-resource primary shared network in `ap-south-1`
-- Terraform code: Phase 1 backend and Phase 2 primary network deployed; Phase 3 DR network planned and validated; Kubernetes code: none
-- GoDaddy settings changed: none; GitHub `main` branch protection configured
-- Next gate: explicit approval to apply the reviewed Phase 3 Singapore pilot-light network; no apply is currently authorized
+- Phase 3 DR network: complete; `29 added / 0 changed / 0 destroyed` in `ap-southeast-1`, with no NAT or compute
+- Combined Phases 4-5 AWS stack: complete; `13 added / 0 changed / 0 destroyed` for Route 53 and six GitHub OIDC roles/policies
+- Terraform code: backend, primary network, DR network, and global DNS/OIDC/IAM deployed; Kubernetes code: none
+- GoDaddy settings changed: none; GitHub `main` protection plus three two-person apply environments configured
+- Next gate: publish and run OIDC smoke tests, then manually delegate `dr.vaultrix.in` at GoDaddy and verify public DNS before Phase 6
 
 ## Core intent
 

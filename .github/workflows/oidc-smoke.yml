@@ -1,0 +1,74 @@
+name: AWS OIDC smoke test
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Ownership scope to test
+        required: true
+        type: choice
+        options:
+          - shared
+          - eks
+          - ec2
+      access:
+        description: Trust path to test
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    if: inputs.access == 'plan'
+    runs-on: ubuntu-latest
+    env:
+      AWS_ROLE_ARN: ${{ inputs.scope == 'shared' && vars.AWS_SHARED_PLAN_ROLE_ARN || inputs.scope == 'eks' && vars.AWS_EKS_PLAN_ROLE_ARN || vars.AWS_EC2_PLAN_ROLE_ARN }}
+    steps:
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: oidc-smoke-${{ github.run_id }}
+
+      - name: Verify plan-role identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_arn="$(aws sts get-caller-identity --query Arn --output text)"
+          expected_role="vaultrix-dr-github-${{ inputs.scope }}-plan"
+          case "$actual_arn" in
+            *":assumed-role/${expected_role}/"*) ;;
+            *) echo "Unexpected assumed identity" >&2; exit 1 ;;
+          esac
+
+  apply:
+    if: inputs.access == 'apply'
+    runs-on: ubuntu-latest
+    environment: ${{ format('{0}-apply', inputs.scope) }}
+    env:
+      AWS_ROLE_ARN: ${{ inputs.scope == 'shared' && vars.AWS_SHARED_APPLY_ROLE_ARN || inputs.scope == 'eks' && vars.AWS_EKS_APPLY_ROLE_ARN || vars.AWS_EC2_APPLY_ROLE_ARN }}
+    steps:
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: oidc-smoke-${{ github.run_id }}
+
+      - name: Verify apply-role identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_arn="$(aws sts get-caller-identity --query Arn --output text)"
+          expected_role="vaultrix-dr-github-${{ inputs.scope }}-apply"
+          case "$actual_arn" in
+            *":assumed-role/${expected_role}/"*) ;;
+            *) echo "Unexpected assumed identity" >&2; exit 1 ;;
+          esac

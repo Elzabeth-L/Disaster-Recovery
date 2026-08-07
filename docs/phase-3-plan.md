@@ -1,6 +1,6 @@
 # Phase 3 DR Shared Network Plan
 
-Status: planning and validation complete; no Phase 3 infrastructure has been applied.
+Status: applied and verified on 2026-08-07.
 
 ## Scope
 
@@ -37,12 +37,18 @@ The dependency lock file contains the locally verified Windows provider checksum
 
 The plan contains no compute, managed NAT, Elastic IP, interface endpoint, ALB, database, or log ingestion. The VPC, subnets, route tables, Internet Gateway, and S3 gateway endpoint have no hourly charge; only negligible backend/S3 request and storage usage is expected. No workload can use general private Internet egress in this phase.
 
-## Apply gate and post-apply acceptance
+## Apply and post-apply acceptance
 
-This plan does not authorize an apply. The exact approval phrase is:
+The owner approved Phase 3. A fresh plan from `main` reproduced `29 to add, 0 to change, 0 to destroy`, and that exact saved plan was applied successfully.
 
-`Approved. Apply Phase 3.`
+- VPC: `vpc-00a302c978e89f187`, CIDR `10.20.0.0/16`.
+- Availability Zone IDs: `apse1-az1` and `apse1-az2`.
+- Internet Gateway: `igw-08516d07f85dc4de0`.
+- S3 gateway endpoint: `vpce-07f1509135c9ad658`, available and associated with six private route tables.
+- Live subnet checks: exactly two public-IP-mapped public subnets and six non-public private/database subnets.
+- Live route checks: only the two public route tables have `0.0.0.0/0`, both through the Internet Gateway; EC2-private, EKS-private, database, and main route tables have no default route.
+- Post-apply Terraform plan: no changes.
 
-After approval, create a fresh plan from `main`, apply only that reviewed plan, then verify the VPC CIDR/AZs, subnet public-IP settings, route-table isolation, S3 endpoint associations, Terraform state, and absence of NAT/EIP/compute. Rollback is a separately reviewed destroy and is allowed only while no consumer or recovery policy depends on the DR shared state.
+No NAT instance, NAT Gateway, Elastic IP, workload compute, RDS, EKS, ALB, DNS, or IAM resource was created by Phase 3. Rollback remains a separately reviewed destroy and is allowed only while no consumer or recovery policy depends on this state.
 
-The next implementation delivery after Phase 3 is the combined Phases 4-5 global/shared DNS, GitHub OIDC, and IAM work. Phase 6 freezes the shared contract; the notes application remains Phase 7A, and Gokul's EC2/RDS work remains Phase 7B after the Phase 6 handoff.
+Combined Phases 4-5 followed Phase 3. Phase 6 freezes the shared contract; the notes application remains Phase 7A, and Gokul's EC2/RDS work remains Phase 7B after the Phase 6 handoff.

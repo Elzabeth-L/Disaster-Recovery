@@ -1,0 +1,5 @@
+bucket       = "vaultrix-dr-123456789012-tfstate"
+key          = "global/shared/terraform.tfstate"
+region       = "ap-south-1"
+encrypt      = true
+use_lockfile = true
