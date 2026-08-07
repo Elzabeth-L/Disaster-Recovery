@@ -1,6 +1,6 @@
 # Architecture
 
-Status: proposed for approval on 2026-08-07. No AWS resources exist.
+Status: application/DR architecture proposed; Phase 1 Terraform state backend implemented on 2026-08-07. No application, network, EKS, EC2, RDS, or DR resources exist.
 
 ## Current repository assessment
 

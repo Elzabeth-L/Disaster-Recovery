@@ -1,6 +1,6 @@
 # Phase 1 Report - Terraform Backend Bootstrap
 
-Status: code and plan complete; awaiting explicit apply approval. Root identity was explicitly approved for bootstrap only. Date: 2026-08-07.
+Status: complete. Root identity was explicitly approved and used for bootstrap only. Applied and verified on 2026-08-07.
 
 ## Files added
 
@@ -13,11 +13,12 @@ Status: code and plan complete; awaiting explicit apply approval. Root identity 
 - `terraform/bootstrap/outputs.tf`
 - `terraform/bootstrap/terraform.tfvars.example`
 - `terraform/bootstrap/backend.tf.example`
+- `terraform/bootstrap/backend.tf`
 - `terraform/bootstrap/backend.hcl.example`
 - `terraform/bootstrap/.terraform.lock.hcl`
 - `terraform/bootstrap/README.md`
 
-## Resources that a reviewed apply would create
+## Resources created
 
 1. One S3 state bucket in `ap-south-1`, named from project and expected AWS account ID.
 2. Bucket-owner-enforced object ownership.
@@ -41,10 +42,20 @@ No DynamoDB table is created. Downstream backends use S3 native `.tflock` object
 - Plan summary: `7 to add, 0 to change, 0 to destroy`.
 - Planned bucket: `vaultrix-dr-598120810297-tfstate` in `ap-south-1`.
 
+## Apply and migration results
+
+- Reviewed saved plan applied successfully: `7 added, 0 changed, 0 destroyed`.
+- Live bucket checks passed for Region, versioning, SSE-S3, bucket-owner enforcement, all four public-access blocks, lifecycle retention, and TLS-only access.
+- Bootstrap state migrated to `s3://vaultrix-dr-598120810297-tfstate/bootstrap/terraform.tfstate` with S3 native locking enabled.
+- Remote state object is versioned and encrypted with `AES256`; all eight Terraform state entries are readable.
+- Post-migration locked plan result: no changes.
+- The consumed plan, empty local state pointer, and automatic duplicate state backup were removed.
+- Ignored recovery evidence remains at `terraform/bootstrap/bootstrap-local-before-migration.tfstate.backup` with SHA-256 `123D003F3CDE1CCC5F79BAB0585B8C3D196EFE97279A8C1FA5330AEA533A4DDF`.
+
 ## Cost impact
 
-No AWS resources were created. After apply, expected cost is low S3 storage/request/version-retention cost; there is no DynamoDB table or customer-managed KMS key.
+The bucket now incurs low S3 storage, request, and retained-version charges. There is no DynamoDB table, NAT Gateway, or customer-managed KMS key in Phase 1.
 
 ## Required next action
 
-Approve or reject applying the saved `bootstrap.tfplan`. Root use is a time-bounded bootstrap exception and must not continue into shared/application phases. An IAM Identity Center permission set or role is required before Phase 2 and GitHub OIDC before automated applies.
+Do not start Phase 2 until its shared-primary-networking design and cost plan are reviewed and separately approved. Root use ended with Phase 1 and must not continue into shared/application phases. An IAM Identity Center permission set or role is required before Phase 2 and GitHub OIDC before automated applies.
