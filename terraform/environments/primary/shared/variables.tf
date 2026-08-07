@@ -49,5 +49,5 @@ variable "egress_mode" {
 variable "nat_instance_type" {
   description = "ARM64 NAT instance type."
   type        = string
-  default     = "t4g.nano"
+  default     = "t4g.micro"
 }

@@ -11,7 +11,7 @@ Phase 1 is complete: the protected Terraform S3 state backend is deployed and it
 - Local CODEOWNERS: prepared for `@Elzabeth-L` (platform/EKS) and `@gokulk18` (EC2/RDS)
 - Remote `main` protection: active; one approval, CODEOWNER review, stale-review dismissal, last-pusher separation, administrator enforcement, linear history, conversation resolution, and force-push/deletion blocking enabled.
 - Phase 1 backend: applied successfully; `7 added / 0 changed / 0 destroyed`; bootstrap state migrated to S3
-- Phase 2 primary network: code and plan prepared; `41 add / 0 change / 0 destroy`; no Phase 2 apply
+- Phase 2 primary network: partial apply created 35 network resources; AWS rejected the non-Free-Tier `t4g.nano`; revised `t4g.micro` plan is `6 add / 0 change / 0 destroy` and awaits approval
 - AWS resources created: one S3 bucket plus six bucket security/retention controls in `ap-south-1`
 - Terraform code: Phase 1 S3 state-backend bootstrap deployed and validated; Kubernetes code: none
 - GoDaddy settings changed: none; GitHub `main` branch protection configured

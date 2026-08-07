@@ -27,7 +27,7 @@ The S3 gateway endpoint is free and suitable for S3, but it cannot provide ECR, 
 
 | Option | Cost | Security/operations | Recommendation |
 |---|---|---|---|
-| One small NAT instance | About $6.42/month base in Mumbai for `t4g.nano`, one public IPv4, and 8 GiB gp3 | Private nodes; self-managed, limited, single-AZ | Approved cost-first lab direction |
+| One small NAT instance | About $8.47/month base in Mumbai for Free Tier-eligible `t4g.micro`, one public IPv4, and 8 GiB gp3 when not covered by Free Tier/credits | Private nodes; self-managed, limited, single-AZ | Approved cost-first lab direction |
 | One zonal NAT Gateway in primary while EKS runs | About $44.53/month base plus $0.056/GB processing in Mumbai | Private nodes, managed and simpler | Fallback if NAT instance is unreliable |
 | Interface endpoints | Hourly per endpoint/AZ plus data | Private, granular; many endpoints | Use only after measuring required set |
 | Public nodes with public IPs | Per-node public IPv4 | Larger exposure and diverges from target | Emergency short-lived lab fallback only |
