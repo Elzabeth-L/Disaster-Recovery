@@ -1,8 +1,8 @@
 # Terraform Backend Bootstrap
 
-Phase 1 creates one S3 bucket for all independently authorized Terraform state prefixes. It does not create a DynamoDB table: Terraform uses S3 native lockfiles through `use_lockfile = true`.
+Phase 1 created one S3 bucket for all independently authorized Terraform state prefixes. It does not use a DynamoDB table: Terraform uses S3 native lockfiles through `use_lockfile = true`.
 
-## Resources in the plan
+## Deployed resources
 
 - S3 bucket named `vaultrix-dr-<account-id>-tfstate`
 - Bucket ownership enforced
@@ -15,7 +15,9 @@ Phase 1 creates one S3 bucket for all independently authorized Terraform state p
 
 The bucket has `prevent_destroy = true`. Removing it requires an explicit, reviewed recovery/cleanup procedure.
 
-## Two-stage bootstrap
+## Two-stage bootstrap runbook
+
+The initial apply and state migration were completed on 2026-08-07. The steps below are retained as the recovery/rebuild runbook.
 
 The first apply must use local state because the remote bucket does not exist yet:
 
@@ -29,7 +31,7 @@ terraform plan -out bootstrap.tfplan
 terraform apply bootstrap.tfplan
 ```
 
-No apply is authorized merely by these instructions. Review the plan and receive the phase apply approval first.
+No future apply is authorized merely by these instructions. Review the plan and receive explicit approval first.
 
 After the bucket exists:
 
@@ -42,7 +44,7 @@ After the bucket exists:
 
 ## Required identity
 
-Use an authenticated individual AWS role or IAM Identity Center permission set for the first reviewed plan/apply. Never use AWS account root credentials. The configuration requires the expected 12-digit account ID and restricts the AWS provider to that account. Later GitHub OIDC roles receive access only to their state object prefixes and lockfiles.
+The owner explicitly approved the locally authenticated AWS account root identity as a one-time Phase 1 bootstrap exception. Root use ended after apply, live verification, and state migration. Phase 2 and later work must use an authenticated individual AWS role or IAM Identity Center permission set; automated workflows must use GitHub OIDC. The configuration requires the expected 12-digit account ID and restricts the AWS provider to that account. Later GitHub OIDC roles receive access only to their state object prefixes and lockfiles.
 
 ## Validation limitations on the current laptop
 

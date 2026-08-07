@@ -2,19 +2,19 @@
 
 Documentation-first design for a cost-conscious AWS disaster recovery lab covering an AWS-native EC2/RDS application and an EKS/PostgreSQL application.
 
-No infrastructure is implemented in the current phase. The approved implementation will use Terraform and proceed one phase at a time. Start with [the architecture](docs/architecture.md), [cost plan](docs/cost-plan.md), and [implementation plan](docs/implementation-plan.md).
+Phase 1 is complete: the protected Terraform S3 state backend is deployed and its bootstrap state is stored remotely. Implementation will continue one approved phase at a time. Start with [the architecture](docs/architecture.md), [cost plan](docs/cost-plan.md), and [implementation plan](docs/implementation-plan.md).
 
 ## Current status
 
 - Architecture and ownership model: proposed
-- Local Git repository: initialized on `main`, remote set to `https://github.com/Elzabeth-L/Disaster-Recovery.git`, no commits yet
+- Git repository: initial documentation and Phase 1 bootstrap commit published to `main`
 - Local CODEOWNERS: prepared for `@Elzabeth-L` (platform/EKS) and `@gokulk18` (EC2/RDS)
-- Remote branch protection: pending a remote `main` branch and authenticated GitHub administration access
-- Phase 1 backend: code validated; plan is `7 add / 0 change / 0 destroy`; awaiting apply approval
-- AWS resources created: none
-- Terraform/Kubernetes code: none
-- GoDaddy or GitHub settings changed: none
-- Next gate: owner approval of the documented decisions, followed by the explicit instruction `Approved. Start Phase 1.`
+- Remote `main` protection: active; PRs, administrator enforcement, linear history, conversation resolution, and force-push/deletion blocking enabled. One approval and CODEOWNER review will be enabled after `@gokulk18` accepts the collaborator invitation.
+- Phase 1 backend: applied successfully; `7 added / 0 changed / 0 destroyed`; bootstrap state migrated to S3
+- AWS resources created: one S3 bucket plus six bucket security/retention controls in `ap-south-1`
+- Terraform code: Phase 1 S3 state-backend bootstrap deployed and validated; Kubernetes code: none
+- GoDaddy settings changed: none; GitHub `main` branch protection configured
+- Next gate: review and separately approve Phase 2 shared primary networking; Phase 2 has not started
 
 ## Core intent
 
