@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Phase 0 repository guardrails, Phase 1 backend, and Phase 2 primary shared network completed. Phase 3 is planned and validated but not applied; later infrastructure has not started.
+Status: Phases 0-3 and the AWS/GitHub infrastructure for combined Phases 4-5 are applied. OIDC smoke testing and manual GoDaddy delegation remain before Phase 6.
 
 ## Sequencing rules
 
