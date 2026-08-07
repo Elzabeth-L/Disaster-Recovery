@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Phase 0 repository guardrails, Phase 1 backend, and Phase 2 primary shared network completed. Phase 3 and later infrastructure have not started.
+Status: Phase 0 repository guardrails, Phase 1 backend, and Phase 2 primary shared network completed. Phase 3 is planned and validated but not applied; later infrastructure has not started.
 
 ## Sequencing rules
 
@@ -58,36 +58,24 @@ Status: Phase 0 repository guardrails, Phase 1 backend, and Phase 2 primary shar
 - **Acceptance:** recovery subnet capacity and outputs exist, no continuously running DR compute.
 - **Rollback/cleanup:** destroy DR shared root only when no recovery copy/policy depends on it; networking can remain as pilot light after approval.
 
-## Phase 4 - DNS
+## Combined Phases 4-5 - DNS, GitHub OIDC, and IAM
 
-- **Objective:** prepare delegated project DNS without moving the registrar/root zone.
-- **Resources:** one Route 53 public hosted zone for `dr.vaultrix.in`; no application failover record until targets exist.
-- **Files:** global/shared Route 53 module/root, delegation checklist, DNS validation script/runbook.
-- **Dependencies:** Phase 1, approved global state, access to manually edit GoDaddy later.
-- **Owner:** platform; GoDaddy change remains a manual owner action.
-- **Cost:** low hosted-zone/query cost.
-- **Tests:** zone/NS output, independent `dig`/`Resolve-DnsName` checks after manual delegation, no conflicting root records.
-- **Acceptance:** hosted zone stable; four assigned name servers documented and delegated/verified only after explicit authorization.
-- **Rollback/cleanup:** remove GoDaddy delegation before deleting zone; hosted-zone deletion requires explicit approval and record inventory.
-
-## Phase 5 - GitHub OIDC and IAM
-
-- **Objective:** establish short-lived CI authentication and ownership-scoped plan/apply roles.
-- **Resources:** one account OIDC provider if absent; shared/EKS/EC2 roles and least-privilege policies, preferably plan/apply separation.
-- **Files:** OIDC/IAM modules and global/shared root, policy documents, trust-policy tests, GitHub Environment setup guide.
-- **Dependencies:** Phases 0-1; exact GitHub org/repo/branch/environment; state prefix model.
-- **Owner:** platform; both review trust and EC2 permissions.
-- **Cost:** IAM/OIDC no direct hourly cost; workflow usage subject to GitHub plan.
-- **Tests:** allowed ref assumes correct role; wrong repository/branch/environment is denied; each role denied another state prefix/resource scope.
-- **Acceptance:** no static AWS keys, no AdministratorAccess, apply roles environment-gated, CloudTrail identity is attributable.
-- **Rollback/cleanup:** disable GitHub environments/workflows, detach policies, then remove unused roles/provider only after checking other consumers.
+- **Objective:** prepare delegated project DNS and establish short-lived, ownership-scoped CI authentication in one global/shared delivery.
+- **Resources:** one Route 53 public hosted zone for `dr.vaultrix.in` with no application failover record until targets exist; one account OIDC provider if absent; shared/EKS/EC2 least-privilege roles and policies, preferably with plan/apply separation.
+- **Files:** global/shared Route 53 and OIDC/IAM modules/root, policy documents, trust-policy tests, delegation and GitHub Environment setup guides, DNS validation script/runbook.
+- **Dependencies:** Phases 0-3; approved global state; exact GitHub repository, protected refs, and environments; state-prefix model; access to edit GoDaddy manually later.
+- **Owner:** platform; both engineers review trust and EC2 permissions. GoDaddy delegation remains a manual owner action.
+- **Cost:** low Route 53 hosted-zone/query cost; IAM/OIDC has no direct hourly cost; workflow usage is subject to the GitHub plan.
+- **Tests:** zone/NS outputs; no conflicting root records; allowed GitHub ref assumes only its correct role; wrong repository/branch/environment is denied; each role is denied another ownership/state scope; independent `dig`/`Resolve-DnsName` checks after separately authorized delegation.
+- **Acceptance:** hosted zone and four assigned name servers are stable; no static AWS keys or AdministratorAccess; apply roles are environment-gated; CloudTrail identity is attributable; delegation is performed and verified only after explicit authorization.
+- **Rollback/cleanup:** remove GoDaddy delegation before deleting the zone; disable GitHub environments/workflows and detach policies before removing unused roles/provider; every deletion requires an exact inventory and explicit approval.
 
 ## Phase 6 - Merge shared foundation and handoff
 
 - **Objective:** validate state separation, freeze contract v1, and make collaborator independently productive.
 - **Resources:** no new workload resources; optional budget/alert guardrails if authorized.
 - **Files:** finalized outputs, CODEOWNERS, path-filtered shared PR workflow, onboarding/runbooks, contract changelog.
-- **Dependencies:** Phases 1-5 and both engineers' review.
+- **Dependencies:** Phases 1-3, combined Phases 4-5, and both engineers' review.
 - **Owner:** platform; collaborator performs consumer proof.
 - **Cost:** no material new runtime cost beyond approved guardrails.
 - **Tests:** dummy/read-only EC2 root resolves only its allowed outputs; CI path-filter matrix; cross-state IAM denial; clean clone onboarding test.
@@ -218,4 +206,4 @@ Resolved: retain eight subnets, add bootstrap/global state, target continuous pr
 
 ## Exact proposed implementation sequence
 
-Approve decisions -> Phase 0 repository guardrails -> Phase 1 backend -> Phase 2 primary shared network -> Phase 3 DR shared network -> Phase 4 DNS preparation/delegation -> Phase 5 OIDC/IAM -> Phase 6 contract freeze/handoff -> Phases 7A and 7B in parallel -> Phase 8 backups and restore proof -> Phase 9 monitoring -> Phase 10 on-demand DR automation -> Phase 11 DNS cutover -> Phase 12 drills -> Phase 13 failback -> Phase 14 cleanup/cost review.
+Approve decisions -> Phase 0 repository guardrails -> Phase 1 backend -> Phase 2 primary shared network -> Phase 3 DR shared network -> combined Phases 4-5 DNS preparation/delegation and GitHub OIDC/IAM -> Phase 6 contract freeze/handoff -> Phases 7A and 7B in parallel -> Phase 8 backups and restore proof -> Phase 9 monitoring -> Phase 10 on-demand DR automation -> Phase 11 DNS cutover -> Phase 12 drills -> Phase 13 failback -> Phase 14 cleanup/cost review.

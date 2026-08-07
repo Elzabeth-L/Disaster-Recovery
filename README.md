@@ -13,9 +13,9 @@ Phase 1 is complete: the protected Terraform S3 state backend is deployed and it
 - Phase 1 backend: applied successfully; `7 added / 0 changed / 0 destroyed`; bootstrap state migrated to S3
 - Phase 2 primary network: complete; 35 resources from the initial apply plus six Free Tier-compatible NAT resources from the revised apply
 - AWS resources created: protected Terraform state backend and the 41-resource primary shared network in `ap-south-1`
-- Terraform code: Phase 1 S3 state-backend bootstrap deployed and validated; Kubernetes code: none
+- Terraform code: Phase 1 backend and Phase 2 primary network deployed; Phase 3 DR network planned and validated; Kubernetes code: none
 - GoDaddy settings changed: none; GitHub `main` branch protection configured
-- Next gate: Phase 3 Singapore pilot-light shared-network planning; no Phase 3 apply is authorized
+- Next gate: explicit approval to apply the reviewed Phase 3 Singapore pilot-light network; no apply is currently authorized
 
 ## Core intent
 

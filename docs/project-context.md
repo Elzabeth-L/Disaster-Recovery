@@ -1487,15 +1487,14 @@ Recommended starting point:
 * DR S3 access
 * networking validation
 
-## Phase 4 — DNS
+## Combined Phases 4–5 — DNS, GitHub OIDC, and IAM
+
+Deliver these together in the global/shared state:
 
 * Route 53 hosted zone
 * GoDaddy delegation instructions
 * DNS validation
-
-## Phase 5 — GitHub OIDC / IAM
-
-* OIDC
+* GitHub OIDC provider
 * shared role
 * EKS role
 * EC2 role
