@@ -1,6 +1,6 @@
 # Cost Plan
 
-Prices vary by Region and date; verify with AWS Pricing Calculator before each phase. This architecture is cost-conscious, not permanently free-tier compatible. As of 2026-08-07, AWS lists a standard-support EKS control plane at $0.10/cluster-hour (about $73 for 730 hours) before nodes; extended support is $0.60/hour. Route 53 lists the first 25 hosted zones at $0.50/month. S3 gateway endpoints have no additional hourly charge.
+Prices vary by Region and date; verify with AWS Pricing Calculator before each phase. This architecture is cost-conscious, not permanently free-tier compatible. As of 2026-08-07, AWS lists a standard-support EKS control plane at $0.10/cluster-hour (about $73 for 730 hours) before nodes; extended support is $0.60/hour. Route 53 lists the first 25 hosted zones at $0.50/month. S3 gateway endpoints have no additional hourly charge. Live Mumbai rates put the planned `t4g.nano` NAT instance, one public IPv4, and 8 GiB gp3 at about $6.42/month before transfer or CPU-credit effects, versus about $44.53/month for one zonal NAT Gateway plus public IPv4 before its $0.056/GB processing charge.
 
 ## Service classification
 

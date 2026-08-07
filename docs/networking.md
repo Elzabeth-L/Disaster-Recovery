@@ -27,12 +27,12 @@ The S3 gateway endpoint is free and suitable for S3, but it cannot provide ECR, 
 
 | Option | Cost | Security/operations | Recommendation |
 |---|---|---|---|
-| One small NAT instance | EC2 plus one public IPv4; normally cheaper | Private nodes; self-managed, limited, single-AZ | Approved cost-first lab direction |
-| One NAT Gateway in primary while EKS runs | Hourly plus data; single-AZ egress | Private nodes, managed and simpler | Fallback if NAT instance is unreliable |
+| One small NAT instance | About $6.42/month base in Mumbai for `t4g.nano`, one public IPv4, and 8 GiB gp3 | Private nodes; self-managed, limited, single-AZ | Approved cost-first lab direction |
+| One zonal NAT Gateway in primary while EKS runs | About $44.53/month base plus $0.056/GB processing in Mumbai | Private nodes, managed and simpler | Fallback if NAT instance is unreliable |
 | Interface endpoints | Hourly per endpoint/AZ plus data | Private, granular; many endpoints | Use only after measuring required set |
 | Public nodes with public IPs | Per-node public IPv4 | Larger exposure and diverges from target | Emergency short-lived lab fallback only |
 
-The selected lab direction is a replaceable Amazon Linux 2023 NAT instance, not AWS's obsolete NAT AMI. It has no inbound administration ports, uses a tightly scoped forwarding security group, and is monitored/rebuilt rather than repaired manually. If testing shows node registration, image pulls, controller calls, or recovery time are unreliable, replace it with one managed NAT Gateway. Interface endpoints are not the default because private EKS can require ECR API/Docker, EC2, STS or EKS Auth, ELB, Logs, and other endpoints, each billed per endpoint AZ.
+The selected lab direction is a replaceable Amazon Linux 2023 NAT instance, not AWS's obsolete NAT AMI. It has no inbound administration ports, uses a tightly scoped forwarding security group, and is monitored/rebuilt rather than repaired manually. The Terraform input also supports `nat_gateway` and `none`; either change requires a new reviewed plan. If testing shows node registration, image pulls, controller calls, or recovery time are unreliable, replace it with one managed zonal NAT Gateway. AWS now also offers regional NAT Gateways that expand across active AZs, but per-AZ hourly/public-address billing makes that option inappropriate for this cost-first lab. Interface endpoints are not the default because private EKS can require ECR API/Docker, EC2, STS or EKS Auth, ELB, Logs, and other endpoints, each billed per endpoint AZ.
 
 DR has no NAT until a drill. The DR workflow creates the approved egress option, uses it for provisioning/restore, then removes it during cleanup.
 

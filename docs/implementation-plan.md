@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Phase 0 repository guardrails and Phase 1 backend completed. Phase 2 and all later infrastructure remain unapproved and have not started.
+Status: Phase 0 repository guardrails and Phase 1 backend completed. Phase 2 code and plan are prepared but not applied. Phase 3 and later infrastructure have not started.
 
 ## Sequencing rules
 
