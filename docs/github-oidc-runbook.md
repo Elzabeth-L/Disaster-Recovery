@@ -14,7 +14,7 @@ Each environment accepts deployments only from protected branches. `@Elzabeth-L`
 
 ## Trust subjects
 
-Plan roles accept only this repository's `pull_request` subject and protected `main` ref. Apply roles accept only their exact environment subject. All roles also require audience `sts.amazonaws.com`; no trust subject contains a wildcard.
+Plan roles accept only this repository's immutable-ID `pull_request` subject and protected `main` ref. Apply roles accept only their exact environment subject. The repository portion is `Elzabeth-L@262315662/Disaster-Recovery@1326425087`, as observed in CloudTrail and confirmed against the GitHub owner/repository IDs. All roles also require audience `sts.amazonaws.com`; no trust subject contains a wildcard.
 
 The account-level provider `token.actions.githubusercontent.com` already existed and is managed by another project's Terraform state. This project references it read-only and owns only its six roles/policies.
 

@@ -1,6 +1,6 @@
 # Combined Phases 4-5 DNS and GitHub OIDC/IAM Report
 
-Status: AWS and GitHub control-plane resources applied on 2026-08-07. Manual GoDaddy delegation and post-merge OIDC smoke results remain.
+Status: AWS and GitHub control-plane resources applied on 2026-08-07. All plan-role OIDC smoke tests pass; manual GoDaddy delegation and two-person apply-role smoke tests remain.
 
 ## Discovery and ownership
 
@@ -32,7 +32,7 @@ The hosted zone is public, has `prevent_destroy`, and currently contains only it
 
 ## OIDC and state boundaries
 
-- Plan trust: exact `pull_request` and `ref:refs/heads/main` subjects for `Elzabeth-L/Disaster-Recovery`.
+- Plan trust: exact `pull_request` and `ref:refs/heads/main` subjects for immutable identity `Elzabeth-L@262315662/Disaster-Recovery@1326425087`.
 - Apply trust: exact `shared-apply`, `eks-apply`, or `ec2-apply` environment subject.
 - Audience: exactly `sts.amazonaws.com`.
 - Wildcard trust subjects: zero.
@@ -53,6 +53,16 @@ IAM simulation proved:
 The repository now has `shared-apply`, `eks-apply`, and `ec2-apply` environments. Each is restricted to protected branches, names both `@Elzabeth-L` and `@gokulk18` as reviewers, and prohibits self-review. Eight non-secret repository variables hold the six role ARNs and two Region names.
 
 The smoke workflow is pinned to immutable commit `e6de054238d6b7531b4efff3b6587d9aade6a06c` of `aws-actions/configure-aws-credentials` v6.2.3. It only requests `contents: read` and `id-token: write`; it does not run Terraform or mutate AWS.
+
+The first shared plan smoke run exposed GitHub's immutable-ID default subject format: CloudTrail showed `repo:Elzabeth-L@262315662/Disaster-Recovery@1326425087:ref:refs/heads/main`. The initial name-only trust was denied as designed. All six role trusts were then corrected to the exact observed identity before further testing.
+
+Post-correction GitHub OIDC results:
+
+- shared plan role: success, run `31190970949`;
+- EKS plan role: success, run `31191051630`; and
+- EC2 plan role: success, run `31191092195`.
+
+The trust correction updated only the six IAM assume-role policies: `0 added, 6 changed, 0 destroyed`. A subsequent Terraform plan reports no changes. Apply-role tests require the engineer who did not initiate the run to approve the corresponding protected environment, so they are intentionally deferred until Gokul is available.
 
 ## Cost and rollback
 
