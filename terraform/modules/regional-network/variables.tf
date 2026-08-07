@@ -44,7 +44,7 @@ variable "egress_mode" {
 variable "nat_instance_type" {
   description = "ARM64 instance type for the cost-first NAT instance."
   type        = string
-  default     = "t4g.nano"
+  default     = "t4g.micro"
 }
 
 variable "nat_instance_ami_ssm_parameter" {

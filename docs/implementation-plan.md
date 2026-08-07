@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Phase 0 repository guardrails and Phase 1 backend completed. Phase 2 code and plan are prepared but not applied. Phase 3 and later infrastructure have not started.
+Status: Phase 0 repository guardrails and Phase 1 backend completed. Phase 2 is partially applied; its Free Tier-compatible NAT remainder awaits approval. Phase 3 and later infrastructure have not started.
 
 ## Sequencing rules
 
@@ -96,8 +96,8 @@ Status: Phase 0 repository guardrails and Phase 1 backend completed. Phase 2 cod
 
 ## Phase 7A - EKS implementation
 
-- **Objective:** deploy the primary EKS application platform with distinct infrastructure, desired state, and data ownership.
-- **Resources:** EKS standard-support cluster, managed nodes, EBS CSI add-on, workload identity, AWS Load Balancer Controller, ALB, application, PostgreSQL StatefulSet/gp3 PVC, application DNS only after health.
+- **Objective:** deploy the primary EKS platform and a simple notes application with distinct infrastructure, desired state, and data ownership.
+- **Resources:** EKS standard-support cluster, managed nodes, EBS CSI add-on, workload identity, AWS Load Balancer Controller, ALB, simple notes application, PostgreSQL StatefulSet/gp3 PVC, application DNS only after health.
 - **Files:** EKS modules/root, `kubernetes/base` and primary overlay, EKS app, validation/deploy runbook and EKS workflows.
 - **Dependencies:** Phase 6; approved egress model; version compatibility matrix; secrets and container registry decisions.
 - **Owner:** platform/EKS owner.
