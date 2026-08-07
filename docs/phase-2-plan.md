@@ -1,6 +1,6 @@
 # Phase 2 Plan - Primary Shared Network
 
-Status: initial apply partially complete; 35 resources created and six NAT-related resources pending a revised Free Tier-compatible plan. Date: 2026-08-07.
+Status: complete. The initial apply created 35 resources, and the approved Free Tier-compatible revision created the six remaining NAT resources. Applied and verified on 2026-08-07.
 
 ## Decision
 
@@ -60,8 +60,26 @@ The root exposes contract version `1.0.0`, environment, Region, VPC ID/CIDR, det
 
 Phase 2 is not accepted until a short-lived private test instance proves S3 endpoint routing and general NAT egress, the NAT instance survives reboot with forwarding rules restored, database route tables remain isolated, and cleanup removes every temporary test resource. EKS-specific node/image/controller tests occur before accepting NAT-instance egress for Phase 7A.
 
-## Apply attempt and revised gate
+## Apply history
 
-The approved initial apply created 35 VPC, subnet, route-table, endpoint, and security-group resources, then stopped when EC2 rejected `t4g.nano` as non-Free-Tier-eligible. It did not create the NAT instance, Elastic IP, or four private default routes. Terraform recorded the partial resources safely in remote state. Do not apply the revised remainder plan until it is reviewed and the owner gives the separate instruction `Approved. Apply revised Phase 2 plan.`
+The approved initial apply created 35 VPC, subnet, route-table, endpoint, and security-group resources, then stopped when EC2 rejected `t4g.nano` as non-Free-Tier-eligible. It did not create the NAT instance, Elastic IP, or four private default routes. Terraform recorded the partial resources safely in remote state.
 
-The revised `t4g.micro` plan is `6 to add, 0 to change, 0 to destroy`: one NAT instance, one Elastic IP, and four EC2/EKS private default routes. The other 35 managed resources are no-ops. The currently deployed partial network has no NAT, Elastic IP, NAT Gateway, or other hourly network appliance.
+The reviewed `t4g.micro` remainder plan was `6 to add, 0 to change, 0 to destroy`: one NAT instance, one Elastic IP, and four EC2/EKS private default routes. Its apply completed successfully, bringing Phase 2 to all 41 planned managed resources.
+
+## Final verification
+
+- VPC `vpc-043d9070f37680fe5` has CIDR `10.10.0.0/16`, DNS support, and DNS hostnames.
+- Eight subnets exist across `aps1-az1` and `aps1-az2`; exactly two public subnets map public IPs and all six private subnets do not.
+- Both public route tables have active Internet Gateway defaults.
+- All four EC2/EKS private route tables have active defaults to the NAT instance network interface.
+- Both database route tables have zero Internet default routes.
+- S3 gateway endpoint `vpce-01b7837ea59411b49` is available and associated with all six private route tables.
+- NAT instance `i-0147ccf03fdacccf5` is a running `t4g.micro`; AWS system and instance checks are both `ok`.
+- NAT source/destination checking is disabled, IMDSv2 is required, its root volume is encrypted, its Elastic IP is associated, and its security group has four private-CIDR ingress rules with no world-open ingress.
+- NAT cloud-init completed without a user-data failure.
+- The NAT instance was rebooted and returned to `running` with both AWS health checks `ok`. A post-reboot short-lived `t4g.micro` with no public IP or inbound rules then produced explicit `NAT_EGRESS_OK`, `S3_CONNECTIVITY_OK`, and completion console markers from an EC2 private subnet. The test instance and temporary security group were deleted.
+- Remote Terraform state contains 44 managed/data entries, is versioned and encrypted with `AES256`, and the post-apply locked plan reported no changes.
+
+## Next gate
+
+Phase 2 is complete. Phase 3 Singapore pilot-light shared-network planning may begin after explicit authorization. No Phase 3 apply is authorized by Phase 2 approval.
