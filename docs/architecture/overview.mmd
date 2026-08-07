@@ -1,0 +1,35 @@
+flowchart TB
+  U[Internet users] --> DNS[GoDaddy root DNS\ndelegates dr.vaultrix.in]
+  DNS --> R53[Route 53 shared hosted zone\nmanual approved failover]
+
+  subgraph P[Primary ap-south-1]
+    PVPC[10.10.0.0/16 VPC\n2-AZ subnet capacity]
+    EALB[EKS ALB] --> EKS[EKS application]
+    EKS --> PG[PostgreSQL StatefulSet\nEBS gp3]
+    CALB[EC2 ALB] --> EC2[EC2 / ASG]
+    EC2 --> RDS[RDS PostgreSQL]
+    PVPC --- EALB
+    PVPC --- CALB
+  end
+
+  R53 --> EALB
+  R53 --> CALB
+
+  subgraph B[Cross-Region recovery data]
+    S3[S3: Velero metadata and pgBackRest]
+    SNAP[Copied AMIs / EBS and RDS snapshots]
+  end
+  PG --> S3
+  EKS --> S3
+  EC2 --> SNAP
+  RDS --> SNAP
+
+  subgraph D[DR ap-southeast-1 - normally pilot light]
+    DVPC[10.20.0.0/16 VPC\n2-AZ subnet capacity]
+    DCOMP[On-demand EKS / EC2 / RDS / ALBs]
+    DVPC --- DCOMP
+  end
+  S3 --> DCOMP
+  SNAP --> DCOMP
+  DCOMP -. after restore, tests, approval .-> R53
+

@@ -1,0 +1,11 @@
+*                                      @Elzabeth-L
+/docs/                                 @Elzabeth-L @gokulk18
+/terraform/bootstrap/                  @Elzabeth-L
+/terraform/environments/global/        @Elzabeth-L
+/terraform/environments/*/shared/      @Elzabeth-L @gokulk18
+/terraform/environments/*/eks/         @Elzabeth-L
+/kubernetes/                            @Elzabeth-L
+/applications/eks-app/                 @Elzabeth-L
+/terraform/environments/*/ec2/         @gokulk18
+/applications/ec2-app/                 @gokulk18
+/.github/                               @Elzabeth-L @gokulk18
