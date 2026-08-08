@@ -125,3 +125,24 @@ output "rds_secret_name" {
   description = "Name of the Secrets Manager secret holding RDS credentials."
   value       = module.rds.secret_name
 }
+
+# AWS Backup Outputs
+output "backup_vault_id" {
+  description = "ID/Name of the primary AWS Backup Vault."
+  value       = module.aws_backup.backup_vault_id
+}
+
+output "backup_vault_arn" {
+  description = "ARN of the primary AWS Backup Vault."
+  value       = module.aws_backup.backup_vault_arn
+}
+
+output "backup_plan_id" {
+  description = "ID of the primary AWS Backup Plan."
+  value       = module.aws_backup.backup_plan_id
+}
+
+output "backup_plan_arn" {
+  description = "ARN of the primary AWS Backup Plan."
+  value       = module.aws_backup.backup_plan_arn
+}

@@ -26,3 +26,15 @@ variable "app_image" {
   type        = string
   default     = "ghcr.io/elzabeth-l/disaster-recovery/vaultrix-ec2-app:latest"
 }
+
+variable "backup_schedule" {
+  description = "Cron schedule expression for AWS Backup."
+  type        = string
+  default     = "cron(0 2 * * ? *)"
+}
+
+variable "backup_retention_days" {
+  description = "Retention period in days for primary EC2 & RDS backups."
+  type        = number
+  default     = 30
+}

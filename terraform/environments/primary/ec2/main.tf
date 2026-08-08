@@ -62,3 +62,17 @@ module "ec2" {
   db_secret_arn              = module.rds.secret_arn
   common_tags                = local.common_tags
 }
+
+# AWS Backup Foundation Module (Protecting Primary EC2 Instance & Private RDS Database)
+module "aws_backup" {
+  source = "../../../modules/aws-backup"
+
+  name_prefix           = local.name_prefix
+  backup_schedule       = var.backup_schedule
+  backup_retention_days = var.backup_retention_days
+  selection_resources = [
+    module.ec2.instance_arn,
+    module.rds.db_instance_arn
+  ]
+  common_tags = local.common_tags
+}

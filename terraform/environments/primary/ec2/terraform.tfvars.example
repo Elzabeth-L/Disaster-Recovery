@@ -1,4 +1,6 @@
-aws_region   = "ap-south-1"
-state_bucket = "vaultrix-dr-123456789012-tfstate"
-state_region = "ap-south-1"
-app_image    = "ghcr.io/elzabeth-l/disaster-recovery/vaultrix-ec2-app:a1b2c3d4e5f67890123456789012345678901234"
+aws_region             = "ap-south-1"
+state_bucket           = "vaultrix-dr-123456789012-tfstate"
+state_region           = "ap-south-1"
+app_image              = "ghcr.io/elzabeth-l/disaster-recovery/vaultrix-ec2-app:a1b2c3d4e5f67890123456789012345678901234"
+backup_schedule        = "cron(0 2 * * ? *)"
+backup_retention_days   = 30
