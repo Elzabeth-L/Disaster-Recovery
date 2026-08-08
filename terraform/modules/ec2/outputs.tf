@@ -3,6 +3,11 @@ output "instance_id" {
   value       = aws_instance.app.id
 }
 
+output "instance_arn" {
+  description = "ARN of the created EC2 instance."
+  value       = aws_instance.app.arn
+}
+
 output "private_ip" {
   description = "Private IP address of the EC2 instance."
   value       = aws_instance.app.private_ip

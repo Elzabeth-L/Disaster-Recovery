@@ -32,7 +32,7 @@ variable "common_tags" {
 }
 
 variable "user_data" {
-  description = "Bootstrap script / user data for the EC2 instance."
+  description = "Custom bootstrap script / user data for the EC2 instance. If null, default container deployment script is rendered."
   type        = string
   default     = null
 }
@@ -53,4 +53,22 @@ variable "app_port" {
   description = "Application port for ingress traffic."
   type        = number
   default     = 8080
+}
+
+variable "db_secret_arn" {
+  description = "Optional Secrets Manager secret ARN holding database credentials for tightly-scoped IAM access."
+  type        = string
+  default     = null
+}
+
+variable "app_image" {
+  description = "GHCR Docker image reference to deploy on the EC2 instance."
+  type        = string
+  default     = "ghcr.io/elzabeth-l/disaster-recovery/vaultrix-ec2-app:latest"
+}
+
+variable "app_env" {
+  description = "Application environment label (e.g. PRIMARY or DR)."
+  type        = string
+  default     = "PRIMARY"
 }

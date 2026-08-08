@@ -35,7 +35,20 @@ module "alb" {
   common_tags        = local.common_tags
 }
 
-# Primary EC2 Compute Instance Module (Protected inside private subnet, trusting ALB SG)
+# Primary Private RDS PostgreSQL Instance Module
+module "rds" {
+  source = "../../../modules/rds"
+
+  name_prefix              = local.name_prefix
+  vpc_id                   = local.shared_vpc_id
+  database_subnet_ids      = local.shared_database_subnets
+  source_security_group_id = module.ec2.security_group_id
+  db_name                  = "appdb"
+  db_username              = "dbadmin"
+  common_tags              = local.common_tags
+}
+
+# Primary EC2 Compute Instance Module (Protected inside private subnet, trusting ALB SG & reading RDS secret)
 module "ec2" {
   source = "../../../modules/ec2"
 
@@ -44,5 +57,8 @@ module "ec2" {
   subnet_id                  = local.ec2_subnet_id
   ingress_security_group_ids = [module.alb.security_group_id]
   app_port                   = 8080
+  app_image                  = var.app_image
+  app_env                    = "PRIMARY"
+  db_secret_arn              = module.rds.secret_arn
   common_tags                = local.common_tags
 }

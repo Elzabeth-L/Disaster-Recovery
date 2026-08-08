@@ -17,6 +17,14 @@ data "aws_ami" "al2023" {
 
 locals {
   ami_id = var.ami_id != null ? var.ami_id : data.aws_ami.al2023[0].id
+
+  default_user_data = templatefile("${path.module}/templates/user_data.sh.tftpl", {
+    app_image     = var.app_image
+    app_env       = var.app_env
+    db_secret_arn = var.db_secret_arn != null ? var.db_secret_arn : ""
+  })
+
+  user_data = var.user_data != null ? var.user_data : local.default_user_data
 }
 
 # Dedicated EC2 Application Security Group
@@ -33,7 +41,7 @@ resource "aws_security_group" "app" {
   )
 }
 
-# Security group ingress rule for allowed Security Groups (e.g. future ALB SG)
+# Security group ingress rule for allowed Security Groups (e.g. ALB SG)
 resource "aws_security_group_rule" "ingress_sgs" {
   count                    = length(var.ingress_security_group_ids)
   type                     = "ingress"
@@ -55,7 +63,7 @@ resource "aws_security_group_rule" "ingress_cidrs" {
   security_group_id = aws_security_group.app.id
 }
 
-# Egress rule allowing outbound traffic for SSM, S3 gateway endpoint, and package repositories
+# Egress rule allowing outbound traffic for SSM, S3 gateway endpoint, Secrets Manager, and package repositories
 resource "aws_security_group_rule" "egress_all" {
   type              = "egress"
   from_port         = 0
@@ -96,6 +104,24 @@ resource "aws_iam_role_policy_attachment" "ssm_core" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+# Tightly-scoped IAM policy statement allowing reading specific RDS secret in Secrets Manager
+resource "aws_iam_role_policy" "read_db_secret" {
+  count = var.db_secret_arn != null ? 1 : 0
+  name  = "${var.name_prefix}-read-db-secret"
+  role  = aws_iam_role.ssm.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = [var.db_secret_arn]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "app" {
   name = "${var.name_prefix}-instance-profile"
   role = aws_iam_role.ssm.name
@@ -117,8 +143,8 @@ resource "aws_instance" "app" {
   iam_instance_profile   = aws_iam_instance_profile.app.name
 
   associate_public_ip_address = false
-  user_data                   = var.user_data
-  user_data_replace_on_change = true
+  user_data                   = local.user_data
+  user_data_replace_on_change = false
 
   metadata_options {
     http_endpoint               = "enabled"

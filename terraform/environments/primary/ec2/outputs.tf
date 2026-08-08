@@ -84,3 +84,44 @@ output "alb_target_group_arn" {
   description = "Target group ARN of the Application Load Balancer."
   value       = module.alb.target_group_arn
 }
+
+# Primary RDS PostgreSQL Outputs
+output "rds_instance_identifier" {
+  description = "Identifier of the primary RDS PostgreSQL instance."
+  value       = module.rds.db_instance_identifier
+}
+
+output "rds_endpoint" {
+  description = "Connection endpoint of the primary RDS PostgreSQL instance."
+  value       = module.rds.db_endpoint
+}
+
+output "rds_address" {
+  description = "Hostname address of the primary RDS PostgreSQL instance."
+  value       = module.rds.db_address
+}
+
+output "rds_port" {
+  description = "Port of the primary RDS PostgreSQL instance."
+  value       = module.rds.db_port
+}
+
+output "rds_database_name" {
+  description = "Name of the primary PostgreSQL database."
+  value       = module.rds.db_name
+}
+
+output "rds_security_group_id" {
+  description = "Security group ID of the primary RDS PostgreSQL instance."
+  value       = module.rds.security_group_id
+}
+
+output "rds_secret_arn" {
+  description = "ARN of the Secrets Manager secret holding RDS credentials."
+  value       = module.rds.secret_arn
+}
+
+output "rds_secret_name" {
+  description = "Name of the Secrets Manager secret holding RDS credentials."
+  value       = module.rds.secret_name
+}

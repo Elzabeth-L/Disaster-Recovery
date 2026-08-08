@@ -20,3 +20,9 @@ variable "state_region" {
   type        = string
   default     = "ap-south-1"
 }
+
+variable "app_image" {
+  description = "Immutable GHCR Docker image reference to deploy on the primary EC2 instance."
+  type        = string
+  default     = "ghcr.io/elzabeth-l/disaster-recovery/vaultrix-ec2-app:latest"
+}

@@ -21,8 +21,9 @@ APP_ENV = os.environ.get("APP_ENV", "PRIMARY").upper()
 DB_SECRET_ARN = os.environ.get("DB_SECRET_ARN", "")
 PORT = int(os.environ.get("PORT", "8080"))
 
-# Cached DB Configuration
+# Cached DB Configuration & Initialization State
 _db_config = None
+_db_initialized = False
 
 
 def get_db_credentials():
@@ -82,6 +83,7 @@ def get_db_connection():
 
 def init_db():
     """Ensure the tasks table exists without altering existing data."""
+    global _db_initialized
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -98,11 +100,20 @@ def init_db():
             """)
             conn.commit()
         conn.close()
+        _db_initialized = True
         logger.info("Database initialized successfully. Table 'tasks' verified.")
         return True
     except Exception as e:
         logger.warning(f"Database initialization deferred or failed: {e}")
         return False
+
+
+def ensure_db_initialized():
+    """Lazy initializer for database schema if startup initialization was deferred."""
+    global _db_initialized
+    if _db_initialized:
+        return True
+    return init_db()
 
 
 # Attempt initial table creation on module load
@@ -137,6 +148,7 @@ def health():
 @app.route("/api/status")
 def api_status():
     """Return application, database, and environment status metadata."""
+    ensure_db_initialized()
     creds = get_db_credentials()
     db_status = "disconnected"
     db_host = creds["host"] if creds else "N/A"
@@ -172,6 +184,7 @@ def api_status():
 @app.route("/api/db-check")
 def api_db_check():
     """Perform explicit database connectivity check."""
+    ensure_db_initialized()
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
@@ -202,6 +215,7 @@ def api_db_check():
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     """Retrieve all tasks from PostgreSQL."""
+    ensure_db_initialized()
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -222,6 +236,7 @@ def get_tasks():
 @app.route("/api/tasks", methods=["POST"])
 def create_task():
     """Create a new task in PostgreSQL."""
+    ensure_db_initialized()
     data = request.get_json() or {}
     title = data.get("title", "").strip()
     description = data.get("description", "").strip()
@@ -255,6 +270,7 @@ def create_task():
 @app.route("/api/tasks/<int:task_id>/complete", methods=["PUT"])
 def complete_task(task_id):
     """Mark a task as completed."""
+    ensure_db_initialized()
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -281,6 +297,7 @@ def complete_task(task_id):
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
     """Delete a task from PostgreSQL."""
+    ensure_db_initialized()
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
