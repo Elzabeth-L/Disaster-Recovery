@@ -1,6 +1,6 @@
 # Collaborator Onboarding
 
-This guide becomes executable after the repository, AWS identities, and shared foundation exist. Replace placeholders before handoff.
+This guide is executable for the Phase 6 consumer proof. Workload creation begins only after that proof is merged.
 
 ## Repository access
 
@@ -62,6 +62,21 @@ The hosted zone is shared. collaborator owns only `ec2.dr.vaultrix.in` plus appr
 ## CI and apply
 
 Changes under EC2 Terraform/application paths trigger format, init/validate, lint, security, tests, and an EC2-only plan. Review replacements/deletions, public access, region, tags, and cost. Apply is separate from PR checks and uses a protected GitHub Environment/OIDC role. DR apply is manual and must never be triggered by a health alarm alone.
+
+## Clean-clone Phase 6 proof
+
+From a new directory, with no repository-local credentials or generated Terraform files:
+
+```bash
+git clone https://github.com/Elzabeth-L/Disaster-Recovery.git
+cd Disaster-Recovery/terraform/environments/primary/ec2
+terraform version
+terraform fmt -check -recursive
+terraform init -backend=false -input=false
+terraform validate
+```
+
+Open the EC2 consumer PR and let `Terraform PR validation` perform the live plan with GitHub OIDC. The expected plan is `0 to add, 0 to change, 0 to destroy`. Neither local AWS root credentials nor shared static credentials are part of collaborator onboarding.
 
 ## Cost safety
 

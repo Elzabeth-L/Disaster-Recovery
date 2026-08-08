@@ -1,5 +1,7 @@
 # Shared Infrastructure Contract
 
+Contract version: `1.0.0` (frozen 2026-08-08)
+
 ## Contract principles
 
 Shared roots create resources once and expose stable, non-secret identifiers. Application roots read outputs; they do not call shared networking modules, import shared resources, retag them, or manage their lifecycle. Output removal/rename is a breaking API change requiring both owners' review and a migration release note.
@@ -85,3 +87,11 @@ Backend bucket/key values are partial backend/config inputs, not secrets committ
 - EKS creates only `eks.dr.vaultrix.in` and diagnostic EKS records. EC2 creates only `ec2.dr.vaultrix.in` and diagnostic EC2 records.
 - Changes to subnet IDs, hosted-zone identity, regions, or state keys require a coordinated migration and major contract version.
 
+## Contract changelog
+
+### 1.0.0 - 2026-08-08
+
+- Froze the regional and global output names and types documented above.
+- Confirmed `primary/ec2` may read only `primary/shared` and `global/shared` and writes only its own state object and lockfile.
+- Added a zero-resource EC2 consumer root and path-aware pull-request validation.
+- Declared output removal, rename, type change, state-key change, or subnet reordering a breaking change requiring both owners' review.
