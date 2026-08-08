@@ -56,3 +56,25 @@ variable "github_repository_name" {
     error_message = "OIDC trust is intentionally restricted to Disaster-Recovery."
   }
 }
+
+variable "github_repository_owner_id" {
+  description = "Immutable GitHub owner ID encoded in current default OIDC subject claims."
+  type        = number
+  default     = 262315662
+
+  validation {
+    condition     = var.github_repository_owner_id == 262315662
+    error_message = "OIDC trust is intentionally restricted to immutable owner ID 262315662."
+  }
+}
+
+variable "github_repository_id" {
+  description = "Immutable GitHub repository ID encoded in current default OIDC subject claims."
+  type        = number
+  default     = 1326425087
+
+  validation {
+    condition     = var.github_repository_id == 1326425087
+    error_message = "OIDC trust is intentionally restricted to immutable repository ID 1326425087."
+  }
+}
