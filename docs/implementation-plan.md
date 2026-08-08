@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Phases 0-3 and combined Phases 4-5 are applied. GitHub OIDC plan-role tests and public GoDaddy delegation are verified. Phase 6 consumer validation is in progress; apply-role smoke testing remains a two-person exercise.
+Status: Phases 0-6 are complete. Shared contract `1.0.0`, public DNS delegation, ownership-scoped OIDC, path-aware CI, and the zero-resource EC2 consumer plan are verified. Phases 7A and 7B may begin; apply-role smoke testing remains a two-person operational exercise.
 
 ## Sequencing rules
 

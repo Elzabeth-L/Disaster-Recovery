@@ -2,7 +2,7 @@
 
 ## When Gokul may start
 
-Gokul may implement only the Phase 6 zero-resource consumer proof until it is merged. EC2/RDS workload infrastructure begins after Phase 6, when all of the following are complete:
+Phase 6 was accepted on 2026-08-09. Gokul may begin Phase 7B EC2/RDS workload infrastructure after rebasing his retained feature work onto current `main`. The following entry conditions are complete:
 
 - Backend and state locking work.
 - Primary and DR shared networking are applied and validated.
@@ -11,6 +11,8 @@ Gokul may implement only the Phase 6 zero-resource consumer proof until it is me
 - Shared output contract is frozen at version `1.0.0`.
 - A read-only consumer proof shows the EC2 root can read shared outputs without managing shared resources.
 - The `Terraform PR validation` check reports a zero-change live plan through the EC2 plan role.
+
+The retained `feature/ec2-platform`, `feature/ec2-alb`, `feature/ec2-rds`, `feature/ec2-backup`, and `feature/ec2-dns` branches are implementation drafts. Rebase and submit them as small dependency-ordered PRs; do not merge them as one combined stack.
 
 ## What to give Gokul
 
