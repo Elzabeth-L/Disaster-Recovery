@@ -76,3 +76,40 @@ module "aws_backup" {
   ]
   common_tags = local.common_tags
 }
+
+# Route 53 Health Check for Primary EC2 ALB Health Endpoint (/health)
+resource "aws_route53_health_check" "primary_ec2" {
+  fqdn              = module.alb.alb_dns_name
+  port              = 80
+  type              = "HTTP"
+  resource_path     = "/health"
+  request_interval  = 30
+  failure_threshold = 3
+
+  tags = merge(
+    local.common_tags,
+    {
+      Name = "${local.name_prefix}-primary-alb-health-check"
+    }
+  )
+}
+
+# Route 53 Primary Failover Alias Record (ec2.dr.vaultrix.in -> Primary ALB)
+resource "aws_route53_record" "primary_ec2_alias" {
+  zone_id = local.global_route53_zone_id
+  name    = "ec2.${local.global_route53_zone_name}"
+  type    = "A"
+
+  failover_routing_policy {
+    type = "PRIMARY"
+  }
+
+  set_identifier  = "PRIMARY"
+  health_check_id = aws_route53_health_check.primary_ec2.id
+
+  alias {
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
+    evaluate_target_health = true
+  }
+}

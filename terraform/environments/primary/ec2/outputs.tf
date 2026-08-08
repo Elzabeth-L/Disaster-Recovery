@@ -146,3 +146,14 @@ output "backup_plan_arn" {
   description = "ARN of the primary AWS Backup Plan."
   value       = module.aws_backup.backup_plan_arn
 }
+
+# Route 53 DNS & Health Check Outputs
+output "primary_dns_record_name" {
+  description = "Full FQDN of the Primary EC2 application Route 53 failover record."
+  value       = aws_route53_record.primary_ec2_alias.fqdn
+}
+
+output "primary_health_check_id" {
+  description = "ID of the Route 53 health check monitoring the Primary ALB."
+  value       = aws_route53_health_check.primary_ec2.id
+}
