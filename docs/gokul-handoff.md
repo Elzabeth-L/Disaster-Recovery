@@ -2,7 +2,7 @@
 
 ## When Gokul may start
 
-Gokul should not start EC2/RDS Terraform yet. He may install tools, obtain repository access, read the architecture, and decide his application design now. Infrastructure work begins after Phase 6, when all of the following are complete:
+Gokul may implement only the Phase 6 zero-resource consumer proof until it is merged. EC2/RDS workload infrastructure begins after Phase 6, when all of the following are complete:
 
 - Backend and state locking work.
 - Primary and DR shared networking are applied and validated.
@@ -10,6 +10,7 @@ Gokul should not start EC2/RDS Terraform yet. He may install tools, obtain repos
 - GitHub OIDC roles and path-filtered validation are working.
 - Shared output contract is frozen at version `1.0.0`.
 - A read-only consumer proof shows the EC2 root can read shared outputs without managing shared resources.
+- The `Terraform PR validation` check reports a zero-change live plan through the EC2 plan role.
 
 ## What to give Gokul
 

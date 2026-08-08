@@ -20,7 +20,9 @@ This Terraform root proves that the primary EC2 stack can read outputs from `pri
 ## Usage
 
 ```bash
-terraform init -backend-config=backend.hcl.example
+terraform init -backend=false -input=false
+terraform fmt -check -recursive
 terraform validate
-terraform plan
 ```
+
+The pull-request workflow performs the live remote-state plan with the EC2 plan role and the isolated `primary/ec2/terraform.tfstate` backend. Phase 6 acceptance requires `0 to add, 0 to change, 0 to destroy`; do not apply this proof root.

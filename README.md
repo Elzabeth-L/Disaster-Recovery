@@ -15,8 +15,9 @@ Phase 1 is complete: the protected Terraform S3 state backend is deployed and it
 - Phase 3 DR network: complete; `29 added / 0 changed / 0 destroyed` in `ap-southeast-1`, with no NAT or compute
 - Combined Phases 4-5 AWS stack: complete; `13 added / 0 changed / 0 destroyed` for Route 53 and six GitHub OIDC roles/policies
 - Terraform code: backend, primary network, DR network, and global DNS/OIDC/IAM deployed; Kubernetes code: none
-- GoDaddy settings changed: none; GitHub `main` protection plus three two-person apply environments configured
-- Next gate: manually delegate `dr.vaultrix.in` at GoDaddy, verify public DNS, and have Gokul participate in the apply-role smoke tests before Phase 6
+- GoDaddy delegation: complete and independently resolved through Google and Cloudflare DNS
+- GitHub OIDC plan-role smoke tests: passed for shared, EKS, and EC2; protected apply-role smoke tests remain a two-person approval exercise
+- Next gate: complete the Phase 6 zero-resource EC2 consumer plan, freeze contract `1.0.0`, and merge the handoff controls before workload implementation
 
 ## Core intent
 

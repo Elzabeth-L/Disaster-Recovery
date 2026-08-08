@@ -1,6 +1,14 @@
 output "contract_version" {
   description = "Contract version enforced by consumer root."
   value       = local.contract_version
+
+  precondition {
+    condition = (
+      data.terraform_remote_state.primary_shared.outputs.contract_version == local.contract_version &&
+      data.terraform_remote_state.global_shared.outputs.contract_version == local.contract_version
+    )
+    error_message = "The primary and global shared states must both expose contract version 1.0.0."
+  }
 }
 
 output "consumed_vpc_id" {
