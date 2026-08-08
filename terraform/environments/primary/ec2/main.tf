@@ -22,14 +22,27 @@ data "terraform_remote_state" "global_shared" {
   }
 }
 
-# Primary EC2 Compute Instance Module
+# Internet-Facing Application Load Balancer Module
+module "alb" {
+  source = "../../../modules/alb"
+
+  name_prefix        = local.name_prefix
+  vpc_id             = local.shared_vpc_id
+  public_subnet_ids  = local.shared_public_subnet_ids
+  target_instance_id = module.ec2.instance_id
+  app_port           = 8080
+  health_check_path  = "/health"
+  common_tags        = local.common_tags
+}
+
+# Primary EC2 Compute Instance Module (Protected inside private subnet, trusting ALB SG)
 module "ec2" {
   source = "../../../modules/ec2"
 
-  name_prefix         = local.name_prefix
-  vpc_id              = local.shared_vpc_id
-  subnet_id           = local.ec2_subnet_id
-  ingress_cidr_blocks = [local.shared_vpc_cidr_block]
-  app_port            = 8080
-  common_tags         = local.common_tags
+  name_prefix                = local.name_prefix
+  vpc_id                     = local.shared_vpc_id
+  subnet_id                  = local.ec2_subnet_id
+  ingress_security_group_ids = [module.alb.security_group_id]
+  app_port                   = 8080
+  common_tags                = local.common_tags
 }

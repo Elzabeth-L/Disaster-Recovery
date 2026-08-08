@@ -14,7 +14,7 @@ output "consumed_vpc_cidr_block" {
 }
 
 output "consumed_public_subnet_ids" {
-  description = "Consumed primary public subnet IDs for future ALB."
+  description = "Consumed primary public subnet IDs for ALB."
   value       = local.shared_public_subnet_ids
 }
 
@@ -62,4 +62,25 @@ output "ec2_security_group_id" {
 output "ec2_iam_role_arn" {
   description = "IAM role ARN attached to the primary EC2 instance for SSM access."
   value       = module.ec2.iam_role_arn
+}
+
+# Primary ALB Outputs
+output "alb_arn" {
+  description = "ARN of the primary internet-facing Application Load Balancer."
+  value       = module.alb.alb_arn
+}
+
+output "alb_dns_name" {
+  description = "Public DNS name of the primary Application Load Balancer."
+  value       = module.alb.alb_dns_name
+}
+
+output "alb_security_group_id" {
+  description = "Security group ID of the Application Load Balancer."
+  value       = module.alb.security_group_id
+}
+
+output "alb_target_group_arn" {
+  description = "Target group ARN of the Application Load Balancer."
+  value       = module.alb.target_group_arn
 }
