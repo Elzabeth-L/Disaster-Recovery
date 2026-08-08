@@ -6,6 +6,13 @@ locals {
   name_prefix      = "${local.project}-${local.environment}-${local.application}"
   hosted_zone_name = "dr.vaultrix.in"
   repository       = "${var.github_repository_owner}/${var.github_repository_name}"
+  repository_subject = format(
+    "%s@%d/%s@%d",
+    var.github_repository_owner,
+    var.github_repository_owner_id,
+    var.github_repository_name,
+    var.github_repository_id,
+  )
   state_bucket_arn = "arn:aws:s3:::vaultrix-dr-${var.expected_aws_account_id}-tfstate"
 
   common_tags = {
@@ -36,7 +43,7 @@ locals {
   role_definitions = {
     shared_plan = {
       role_name           = "vaultrix-dr-github-shared-plan"
-      subjects            = ["repo:${local.repository}:pull_request", "repo:${local.repository}:ref:refs/heads/main"]
+      subjects            = ["repo:${local.repository_subject}:pull_request", "repo:${local.repository_subject}:ref:refs/heads/main"]
       readable_state_keys = local.shared_state_keys
       writable_state_keys = []
       lockable_state_keys = local.shared_state_keys
@@ -45,7 +52,7 @@ locals {
     }
     shared_apply = {
       role_name           = "vaultrix-dr-github-shared-apply"
-      subjects            = ["repo:${local.repository}:environment:shared-apply"]
+      subjects            = ["repo:${local.repository_subject}:environment:shared-apply"]
       readable_state_keys = local.shared_state_keys
       writable_state_keys = local.shared_state_keys
       lockable_state_keys = local.shared_state_keys
@@ -54,7 +61,7 @@ locals {
     }
     eks_plan = {
       role_name           = "vaultrix-dr-github-eks-plan"
-      subjects            = ["repo:${local.repository}:pull_request", "repo:${local.repository}:ref:refs/heads/main"]
+      subjects            = ["repo:${local.repository_subject}:pull_request", "repo:${local.repository_subject}:ref:refs/heads/main"]
       readable_state_keys = concat(local.shared_state_keys, local.eks_state_keys)
       writable_state_keys = []
       lockable_state_keys = local.eks_state_keys
@@ -63,7 +70,7 @@ locals {
     }
     eks_apply = {
       role_name           = "vaultrix-dr-github-eks-apply"
-      subjects            = ["repo:${local.repository}:environment:eks-apply"]
+      subjects            = ["repo:${local.repository_subject}:environment:eks-apply"]
       readable_state_keys = concat(local.shared_state_keys, local.eks_state_keys)
       writable_state_keys = local.eks_state_keys
       lockable_state_keys = local.eks_state_keys
@@ -72,7 +79,7 @@ locals {
     }
     ec2_plan = {
       role_name           = "vaultrix-dr-github-ec2-plan"
-      subjects            = ["repo:${local.repository}:pull_request", "repo:${local.repository}:ref:refs/heads/main"]
+      subjects            = ["repo:${local.repository_subject}:pull_request", "repo:${local.repository_subject}:ref:refs/heads/main"]
       readable_state_keys = concat(local.shared_state_keys, local.ec2_state_keys)
       writable_state_keys = []
       lockable_state_keys = local.ec2_state_keys
@@ -81,7 +88,7 @@ locals {
     }
     ec2_apply = {
       role_name           = "vaultrix-dr-github-ec2-apply"
-      subjects            = ["repo:${local.repository}:environment:ec2-apply"]
+      subjects            = ["repo:${local.repository_subject}:environment:ec2-apply"]
       readable_state_keys = concat(local.shared_state_keys, local.ec2_state_keys)
       writable_state_keys = local.ec2_state_keys
       lockable_state_keys = local.ec2_state_keys

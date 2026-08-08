@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Status: Phases 0-3 and the AWS/GitHub infrastructure for combined Phases 4-5 are applied. OIDC smoke testing and manual GoDaddy delegation remain before Phase 6.
+Status: Phases 0-3 and the AWS/GitHub infrastructure for combined Phases 4-5 are applied. All three plan-role OIDC smoke tests pass; two-person apply-role smoke testing and manual GoDaddy delegation remain before Phase 6.
 
 ## Sequencing rules
 

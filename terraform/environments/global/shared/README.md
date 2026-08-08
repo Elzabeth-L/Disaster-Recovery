@@ -4,13 +4,15 @@ Combined Phases 4-5 owns the `dr.vaultrix.in` public hosted zone and repository-
 
 ## Security boundaries
 
-- Plan roles trust only this repository's `pull_request` or protected `main` subjects.
+- Plan roles trust only this repository's immutable-ID `pull_request` or protected `main` subjects.
 - Apply roles trust only the exact `shared-apply`, `eks-apply`, or `ec2-apply` GitHub Environment subject.
 - Each role can read only the shared and owner-specific state objects it needs.
 - Plan roles can manage only their state lockfiles; they cannot write Terraform state.
 - Apply roles can write only their ownership scope and are explicitly denied cross-owner state writes.
 - EKS and EC2 apply roles can change only their approved DNS names and record types.
 - Workload mutation permissions are intentionally added in the owning implementation phase after the exact resource plan exists; these foundation roles do not carry broad administrator permissions.
+
+GitHub's current default OIDC subject includes immutable owner/repository IDs (`Elzabeth-L@262315662/Disaster-Recovery@1326425087`). The trust policy intentionally matches that exact value so a renamed or name-reused repository cannot inherit access.
 
 The hosted zone uses `prevent_destroy`; removing it requires a deliberate code change and separate approval. No application DNS record is created before a healthy endpoint exists.
 
