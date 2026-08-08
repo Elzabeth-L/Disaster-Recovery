@@ -64,17 +64,32 @@ module "ec2" {
 }
 
 # AWS Backup Foundation Module (Protecting Primary EC2 Instance & Private RDS Database)
+# cross-region copy to DR vault ensures RPO < 26h for DR data continuity
 module "aws_backup" {
   source = "../../../modules/aws-backup"
 
-  name_prefix           = local.name_prefix
-  backup_schedule       = var.backup_schedule
-  backup_retention_days = var.backup_retention_days
+  name_prefix                       = local.name_prefix
+  backup_schedule                   = var.backup_schedule
+  backup_retention_days             = var.backup_retention_days
+  copy_action_destination_vault_arn = var.copy_action_destination_vault_arn
   selection_resources = [
     module.ec2.instance_arn,
     module.rds.db_instance_arn
   ]
   common_tags = local.common_tags
+}
+
+# CloudWatch Alarms: ALB, EC2, and RDS health & performance monitoring
+module "cloudwatch_alarms" {
+  source = "../../../modules/cloudwatch-alarms"
+
+  name_prefix             = local.name_prefix
+  alb_arn_suffix          = module.alb.alb_arn
+  target_group_arn_suffix = module.alb.target_group_arn
+  ec2_instance_id         = module.ec2.instance_id
+  rds_identifier          = module.rds.db_instance_identifier
+  alarm_email             = var.alarm_email
+  common_tags             = local.common_tags
 }
 
 # Route 53 Health Check for Primary EC2 ALB Health Endpoint (/health)
@@ -113,3 +128,4 @@ resource "aws_route53_record" "primary_ec2_alias" {
     evaluate_target_health = true
   }
 }
+

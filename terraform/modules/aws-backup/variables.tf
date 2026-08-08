@@ -43,6 +43,12 @@ variable "selection_tags" {
   default = []
 }
 
+variable "copy_action_destination_vault_arn" {
+  description = "Optional ARN of a destination backup vault for cross-region copy. When set, every backup is copied to this vault (e.g., DR vault in ap-southeast-1)."
+  type        = string
+  default     = null
+}
+
 variable "common_tags" {
   description = "Common resource tags."
   type        = map(string)

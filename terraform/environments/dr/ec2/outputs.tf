@@ -92,3 +92,9 @@ output "dr_health_check_id" {
   description = "ID of the Route 53 health check monitoring the DR ALB."
   value       = aws_route53_health_check.dr_ec2.id
 }
+
+# CloudWatch / SNS Monitoring Outputs
+output "sns_alerts_topic_arn" {
+  description = "ARN of the SNS topic receiving CloudWatch alarm notifications in DR region."
+  value       = module.cloudwatch_alarms.sns_topic_arn
+}

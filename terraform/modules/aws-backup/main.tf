@@ -61,6 +61,17 @@ resource "aws_backup_plan" "main" {
     lifecycle {
       delete_after = var.backup_retention_days
     }
+
+    # Cross-region copy to DR vault when destination ARN is provided
+    dynamic "copy_action" {
+      for_each = var.copy_action_destination_vault_arn != null ? [1] : []
+      content {
+        destination_vault_arn = var.copy_action_destination_vault_arn
+        lifecycle {
+          delete_after = var.backup_retention_days
+        }
+      }
+    }
   }
 
   tags = merge(

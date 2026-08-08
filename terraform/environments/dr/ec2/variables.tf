@@ -38,3 +38,9 @@ variable "backup_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "alarm_email" {
+  description = "Email address to receive CloudWatch alarm notifications via SNS."
+  type        = string
+  default     = ""
+}

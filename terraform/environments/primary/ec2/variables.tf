@@ -38,3 +38,15 @@ variable "backup_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "copy_action_destination_vault_arn" {
+  description = "ARN of the DR region backup vault to copy Primary backups into for cross-region DR data continuity. Set to the vaultrix-dr-dr-ec2-backup-vault ARN in ap-southeast-1."
+  type        = string
+  default     = null
+}
+
+variable "alarm_email" {
+  description = "Email address to receive CloudWatch alarm notifications via SNS."
+  type        = string
+  default     = ""
+}

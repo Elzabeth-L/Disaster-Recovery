@@ -77,6 +77,19 @@ module "aws_backup" {
   common_tags = local.common_tags
 }
 
+# CloudWatch Alarms: ALB, EC2, and RDS health & performance monitoring in DR region
+module "cloudwatch_alarms" {
+  source = "../../../modules/cloudwatch-alarms"
+
+  name_prefix             = local.name_prefix
+  alb_arn_suffix          = module.alb.alb_arn
+  target_group_arn_suffix = module.alb.target_group_arn
+  ec2_instance_id         = module.ec2.instance_id
+  rds_identifier          = module.rds.db_instance_identifier
+  alarm_email             = var.alarm_email
+  common_tags             = local.common_tags
+}
+
 # Route 53 Health Check for DR EC2 ALB Health Endpoint (/health)
 resource "aws_route53_health_check" "dr_ec2" {
   fqdn              = module.alb.alb_dns_name

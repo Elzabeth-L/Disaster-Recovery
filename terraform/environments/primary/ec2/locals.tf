@@ -2,7 +2,7 @@ locals {
   project          = "vaultrix-dr"
   environment      = "primary"
   application      = "ec2"
-  contract_version = "1.0.0"
+  contract_version = "v1"
   name_prefix      = "${local.project}-${local.environment}-${local.application}"
 
   # Consumed primary shared outputs (strictly allowed by shared contract)
