@@ -49,7 +49,8 @@ jobs:
 
       - name: Substitute CI image tag
         shell: bash
-        run: sed -i "s|newTag: replace-me|newTag: ci-${GITHUB_SHA}|" kubernetes/overlays/primary/kustomization.yaml
+        run: |
+          sed -i "s|newTag: replace-me|newTag: ci-${GITHUB_SHA}|" kubernetes/overlays/primary/kustomization.yaml
 
       - run: kubectl kustomize kubernetes/overlays/primary > "${RUNNER_TEMP}/primary.yaml"
         shell: bash
