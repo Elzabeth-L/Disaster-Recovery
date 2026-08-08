@@ -18,7 +18,9 @@ Phases 1-6 are complete: the protected backend, shared networks, DNS/OIDC founda
 - GoDaddy delegation: complete and independently resolved through Google and Cloudflare DNS
 - GitHub OIDC plan-role smoke tests: passed for shared, EKS, and EC2; protected apply-role smoke tests remain a two-person approval exercise
 - Phase 6 contract/handoff: complete; all four Terraform roots validate and the OIDC-backed EC2 consumer plan returned zero changes
-- Next gate: Phase 7A notes application/EKS implementation and Phase 7B EC2/RDS implementation may begin independently
+- Current gate: Phase 7A notes application/EKS implementation is prepared for CI and a reviewed,
+  explicitly approved cost-bearing plan; no EKS resources have been applied. Phase 7B may continue
+  independently on Gokul's retained feature branches.
 
 ## Core intent
 

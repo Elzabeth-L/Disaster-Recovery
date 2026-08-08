@@ -23,6 +23,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       has_roots: ${{ steps.matrix.outputs.has_roots }}
       ec2_consumer: ${{ steps.matrix.outputs.ec2_consumer }}
+      eks_consumer: ${{ steps.matrix.outputs.eks_consumer }}
     steps:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -44,9 +45,11 @@ jobs:
           matrix="$(python .github/scripts/terraform_matrix.py < "${RUNNER_TEMP}/changed-paths.txt")"
           has_roots="$(python -c 'import json,sys; print(str(bool(json.load(sys.stdin)["include"])).lower())' <<< "${matrix}")"
           ec2_consumer="$(python -c 'import json,sys; print(str(any(item["name"] == "primary-ec2" for item in json.load(sys.stdin)["include"])).lower())' <<< "${matrix}")"
+          eks_consumer="$(python -c 'import json,sys; print(str(any(item["name"] == "primary-eks" for item in json.load(sys.stdin)["include"])).lower())' <<< "${matrix}")"
           echo "matrix=${matrix}" >> "${GITHUB_OUTPUT}"
           echo "has_roots=${has_roots}" >> "${GITHUB_OUTPUT}"
           echo "ec2_consumer=${ec2_consumer}" >> "${GITHUB_OUTPUT}"
+          echo "eks_consumer=${eks_consumer}" >> "${GITHUB_OUTPUT}"
 
   validate:
     name: Validate ${{ matrix.name }}
@@ -138,3 +141,46 @@ jobs:
             -var="expected_aws_account_id=598120810297" \
             -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
             -var="state_region=ap-south-1"
+
+  primary-eks-plan:
+    name: Plan primary EKS (cost gate enabled)
+    needs:
+      - changes
+      - validate
+    if: needs.changes.outputs.eks_consumer == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/primary/eks
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure short-lived EKS plan credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_EKS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: phase7a-eks-plan-${{ github.run_id }}
+
+      - name: Initialize isolated EKS state
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=primary/eks/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Produce speculative cost-bearing plan
+        run: |
+          terraform plan -input=false -lock=false -no-color \
+            -var="expected_aws_account_id=598120810297" \
+            -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
+            -var="deployment_enabled=true" \
+            -var="cost_acknowledgement=APPROVE_PRIMARY_EKS_COSTS"

@@ -1,0 +1,4 @@
+expected_aws_account_id = "598120810297"
+state_bucket            = "vaultrix-dr-598120810297-tfstate"
+deployment_enabled      = true
+cost_acknowledgement    = "APPROVE_PRIMARY_EKS_COSTS"

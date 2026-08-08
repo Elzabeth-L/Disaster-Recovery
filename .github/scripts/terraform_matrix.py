@@ -34,6 +34,11 @@ roots = (
         "terraform/environments/primary/ec2",
         r"^terraform/environments/primary/ec2/|^docs/shared-infrastructure-contract\.md$",
     ),
+    (
+        "primary-eks",
+        "terraform/environments/primary/eks",
+        r"^terraform/environments/primary/eks/|^terraform/modules/eks-platform/|^docs/shared-infrastructure-contract\.md$",
+    ),
 )
 
 include = [

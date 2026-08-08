@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vaultrix Notes</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">Disaster Recovery Lab</p>
+        <h1>Vaultrix Notes</h1>
+        <p>Small notes, deliberately recoverable.</p>
+      </header>
+
+      <form id="note-form">
+        <label for="title">Title</label>
+        <input id="title" name="title" maxlength="120" required>
+        <label for="content">Note</label>
+        <textarea id="content" name="content" maxlength="2000" rows="5" required></textarea>
+        <button type="submit">Save note</button>
+        <p id="form-status" role="status"></p>
+      </form>
+
+      <section aria-labelledby="notes-heading">
+        <h2 id="notes-heading">Saved notes</h2>
+        <div id="notes" class="notes" aria-live="polite"></div>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
