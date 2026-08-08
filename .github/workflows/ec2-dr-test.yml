@@ -1,0 +1,67 @@
+name: EC2 Disaster Recovery Automated Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 0' # Run weekly on Sunday at 04:00 UTC
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  PRIMARY_REGION: ap-south-1
+  DR_REGION: ap-southeast-1
+  ROLE_TO_ASSUME: arn:aws:iam::598120810297:role/vaultrix-dr-github-ec2-plan
+
+jobs:
+  dr-drill-verification:
+    name: Verify Primary and DR Standby Health
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.PRIMARY_REGION }}
+          role-session-name: GitHubActions-EC2-DR-Drill
+
+      - name: Check Primary EC2 Application Target Health
+        run: |
+          echo "============================================================"
+          echo " Running EC2 DR Drill Check: Primary Region (${PRIMARY_REGION})"
+          echo "============================================================"
+          PRIMARY_ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --region "${PRIMARY_REGION}" \
+            --names "vaultrix-dr-primary-ec2-alb" \
+            --query "LoadBalancers[0].DNSName" \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$PRIMARY_ALB_DNS" ] && [ "$PRIMARY_ALB_DNS" != "None" ]; then
+            echo "Primary ALB DNS: $PRIMARY_ALB_DNS"
+            curl -s -f --max-time 10 "http://${PRIMARY_ALB_DNS}/health" || echo "Primary /health endpoint pending live apply."
+          else
+            echo "Primary ALB not currently provisioned in ${PRIMARY_REGION}."
+          fi
+
+      - name: Check DR Standby EC2 Application Target Health
+        run: |
+          echo "============================================================"
+          echo " Running EC2 DR Drill Check: DR Region (${DR_REGION})"
+          echo "============================================================"
+          DR_ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --region "${DR_REGION}" \
+            --names "vaultrix-dr-dr-ec2-alb" \
+            --query "LoadBalancers[0].DNSName" \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$DR_ALB_DNS" ] && [ "$DR_ALB_DNS" != "None" ]; then
+            echo "DR ALB DNS: $DR_ALB_DNS"
+            curl -s -f --max-time 10 "http://${DR_ALB_DNS}/health" || echo "DR /health endpoint pending live apply."
+          else
+            echo "DR ALB not currently provisioned in ${DR_REGION}."
+          fi

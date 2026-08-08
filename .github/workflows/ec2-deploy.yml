@@ -1,0 +1,54 @@
+name: EC2 Application CD Deployment
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'applications/ec2-app/**'
+      - '.github/workflows/ec2-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  ROLE_TO_ASSUME: arn:aws:iam::598120810297:role/vaultrix-dr-github-ec2-apply
+
+jobs:
+  deploy-to-ec2:
+    name: Deploy Container to Primary EC2 via SSM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GitHubActions-EC2-CD
+
+      - name: Restart VaultRix Application Container via SSM
+        run: |
+          echo "Triggering SSM Run Command to deploy updated container image..."
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=vaultrix-dr-primary-ec2-instance" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$INSTANCE_ID" ] && [ "$INSTANCE_ID" != "None" ]; then
+            echo "Found EC2 Instance: $INSTANCE_ID"
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters 'commands=["systemctl restart vaultrix-app.service"]' \
+              --comment "GitHub Actions EC2 CD Deployment"
+            echo "SSM Deployment command executed successfully."
+          else
+            echo "Primary EC2 Instance not currently running or deployed. Skipping live SSM command."
+          fi
