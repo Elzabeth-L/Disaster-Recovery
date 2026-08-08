@@ -1,0 +1,56 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: #f4f1ea;
+  color: #17231d;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #d8eadf, transparent 35%), #f4f1ea;
+}
+
+main {
+  width: min(760px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 4rem 0;
+}
+
+header { margin-bottom: 2rem; }
+h1 { font-size: clamp(2.5rem, 8vw, 5rem); margin: 0; letter-spacing: -0.06em; }
+.eyebrow { color: #27684b; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+
+form, article {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid #cbd9cf;
+  border-radius: 18px;
+  box-shadow: 0 16px 40px rgba(32, 73, 52, 0.08);
+  padding: 1.25rem;
+}
+
+form { display: grid; gap: 0.65rem; }
+input, textarea {
+  border: 1px solid #9fb7a8;
+  border-radius: 10px;
+  font: inherit;
+  padding: 0.8rem;
+}
+
+button {
+  background: #184c36;
+  border: 0;
+  border-radius: 999px;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.75rem 1.2rem;
+  width: fit-content;
+}
+
+.notes { display: grid; gap: 1rem; }
+article { position: relative; }
+article h3 { margin-top: 0; }
+article small { color: #5b6b62; }
+.delete { background: #8c342d; float: right; }

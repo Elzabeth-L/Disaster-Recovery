@@ -1,0 +1,114 @@
+name: Primary EKS platform
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Plan is read-only; Apply creates or updates the cost-bearing primary platform
+        required: true
+        type: choice
+        options: [Plan, Apply]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_ROOT: terraform/environments/primary/eks
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.TF_ROOT }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure short-lived plan credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_EKS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: phase7a-plan-${{ github.run_id }}
+
+      - name: Initialize isolated state
+        run: |
+          terraform init \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=primary/eks/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Create reviewed plan
+        run: |
+          terraform plan -lock=false -out=phase7a.tfplan \
+            -var="expected_aws_account_id=598120810297" \
+            -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
+            -var="deployment_enabled=true" \
+            -var="cost_acknowledgement=APPROVE_PRIMARY_EKS_COSTS"
+          terraform show -no-color phase7a.tfplan > phase7a-plan.txt
+
+      - name: Upload exact plan for protected apply
+        if: inputs.operation == 'Apply'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: phase7a-plan-${{ github.run_id }}
+          path: |
+            terraform/environments/primary/eks/phase7a.tfplan
+            terraform/environments/primary/eks/phase7a-plan.txt
+          retention-days: 2
+
+      - name: Publish plan summary
+        run: cat phase7a-plan.txt >> "${GITHUB_STEP_SUMMARY}"
+
+  apply:
+    if: inputs.operation == 'Apply'
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: eks-apply
+    defaults:
+      run:
+        working-directory: ${{ env.TF_ROOT }}
+    steps:
+      - name: Check out exact repository revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure short-lived apply credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_EKS_APPLY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: phase7a-apply-${{ github.run_id }}
+
+      - name: Initialize isolated state
+        run: |
+          terraform init \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=primary/eks/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Download exact reviewed plan
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: phase7a-plan-${{ github.run_id }}
+          path: terraform/environments/primary/eks
+
+      - name: Apply reviewed plan
+        run: terraform apply -auto-approve phase7a.tfplan

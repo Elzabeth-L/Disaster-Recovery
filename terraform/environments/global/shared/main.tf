@@ -140,6 +140,34 @@ data "aws_iam_policy_document" "github" {
   }
 
   dynamic "statement" {
+    for_each = each.key == "eks_apply" ? [1] : []
+
+    content {
+      sid       = "ManageOwnedEksPlatform"
+      effect    = "Allow"
+      actions   = local.eks_apply_actions
+      resources = ["*"]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = each.key == "eks_apply" ? [1] : []
+
+    content {
+      sid       = "PassOwnedEksRoles"
+      effect    = "Allow"
+      actions   = ["iam:PassRole"]
+      resources = ["arn:aws:iam::${var.expected_aws_account_id}:role/vaultrix-dr-primary-eks-*"]
+
+      condition {
+        test     = "StringEquals"
+        variable = "iam:PassedToService"
+        values   = ["ec2.amazonaws.com", "eks.amazonaws.com", "pods.eks.amazonaws.com"]
+      }
+    }
+  }
+
+  dynamic "statement" {
     for_each = length(each.value.dns_names) > 0 ? [1] : []
 
     content {
