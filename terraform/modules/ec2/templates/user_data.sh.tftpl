@@ -1,0 +1,50 @@
+#!/bin/bash
+set -euo pipefail
+
+# Redirect output to user-data.log for SSM debugging
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/null) 2>&1
+
+echo "[$(date)] Starting VaultRix EC2 Application Deployment..."
+
+# Install Docker on Amazon Linux 2023
+if ! command -v docker &> /dev/null; then
+    echo "[$(date)] Installing Docker via dnf..."
+    dnf update -y
+    dnf install -y docker
+fi
+
+# Enable and start Docker daemon
+systemctl enable docker
+systemctl start docker
+
+# Create systemd service for VaultRix Tasks container
+cat << 'EOF' > /etc/systemd/system/vaultrix-app.service
+[Unit]
+Description=VaultRix Tasks Container Application
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStartPre=-/usr/bin/docker stop vaultrix-app
+ExecStartPre=-/usr/bin/docker rm vaultrix-app
+ExecStartPre=/usr/bin/docker pull ${app_image}
+ExecStart=/usr/bin/docker run --name vaultrix-app \
+  -p 8080:8080 \
+  -e APP_ENV=${app_env} \
+  -e DB_SECRET_ARN=${db_secret_arn} \
+  ${app_image}
+ExecStop=/usr/bin/docker stop vaultrix-app
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and start application service
+systemctl daemon-reload
+systemctl enable vaultrix-app.service
+systemctl restart vaultrix-app.service
+
+echo "[$(date)] VaultRix Tasks Container Application deployment initiated successfully."
