@@ -7,6 +7,7 @@ shared states.
 The default configuration creates no resources. A reviewed plan or apply must explicitly set
 `deployment_enabled=true` and `cost_acknowledgement=APPROVE_PRIMARY_EKS_COSTS`.
 
-The cluster uses two private ARM64 on-demand nodes, the existing NAT instance for egress, EKS Pod
+The cluster uses two private `t4g.small` ARM64 on-demand nodes (the largest ARM64 type allowed by the
+account's Free Tier eligibility restriction), the existing NAT instance for egress, EKS Pod
 Identity, EBS CSI storage, an ECR repository, and a Secrets Manager container. The secret value is
 created operationally and is never stored in Terraform state.

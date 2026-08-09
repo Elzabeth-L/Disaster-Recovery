@@ -6,7 +6,10 @@ Status: implementation prepared; AWS apply not yet approved or executed.
 
 - EKS Kubernetes `1.35`, which remains in standard support through 2027-03-27.
 - One continuously available primary control plane in Mumbai and no DR cluster in this phase.
-- Two `t4g.medium` on-demand managed nodes across the two existing private EKS subnets.
+- Two `t4g.small` on-demand managed nodes across the two existing private EKS subnets. The original
+  `t4g.medium` plan was rejected at instance launch because this account enforces Free Tier-eligible
+  EC2 types. `t4g.small` is the largest eligible ARM64 type reported in Mumbai; `t4g.micro` is too
+  small for EKS system pods plus the application and PostgreSQL requests.
 - Existing `t4g.micro` NAT instance for private-node egress. A NAT Gateway remains only the fallback
   if node registration, ECR pulls, STS, controller calls, or package access prove unreliable.
 - EKS Pod Identity for VPC CNI, EBS CSI, and AWS Load Balancer Controller. The node role also retains
