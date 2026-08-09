@@ -151,6 +151,62 @@ data "aws_iam_policy_document" "github" {
   }
 
   dynamic "statement" {
+    for_each = each.key == "ec2_apply" ? [1] : []
+
+    content {
+      sid       = "ManageOwnedEc2Platform"
+      effect    = "Allow"
+      actions   = local.ec2_apply_actions
+      resources = ["*"]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = each.key == "ec2_apply" ? [1] : []
+
+    content {
+      sid       = "CreateRequiredEc2ServiceLinkedRoles"
+      effect    = "Allow"
+      actions   = ["iam:CreateServiceLinkedRole"]
+      resources = ["*"]
+
+      condition {
+        test     = "StringEquals"
+        variable = "iam:AWSServiceName"
+        values   = ["elasticloadbalancing.amazonaws.com", "rds.amazonaws.com"]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = contains(["ec2_plan", "ec2_apply"], each.key) ? [1] : []
+
+    content {
+      sid       = "ReadOwnedEc2DatabaseSecret"
+      effect    = "Allow"
+      actions   = ["secretsmanager:GetSecretValue"]
+      resources = ["arn:aws:secretsmanager:*:${var.expected_aws_account_id}:secret:vaultrix-dr-*-ec2-db-credentials-*"]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = each.key == "ec2_apply" ? [1] : []
+
+    content {
+      sid       = "PassOwnedEc2Roles"
+      effect    = "Allow"
+      actions   = ["iam:PassRole"]
+      resources = ["arn:aws:iam::${var.expected_aws_account_id}:role/vaultrix-dr-*-ec2-*"]
+
+      condition {
+        test     = "StringEquals"
+        variable = "iam:PassedToService"
+        values   = ["backup.amazonaws.com", "ec2.amazonaws.com"]
+      }
+    }
+  }
+
+  dynamic "statement" {
     for_each = each.key == "eks_apply" ? [1] : []
 
     content {

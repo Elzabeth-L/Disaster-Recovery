@@ -32,7 +32,12 @@ roots = (
     (
         "primary-ec2",
         "terraform/environments/primary/ec2",
-        r"^terraform/environments/primary/ec2/|^docs/shared-infrastructure-contract\.md$",
+        r"^terraform/environments/primary/ec2/|^terraform/modules/(alb|aws-backup|cloudwatch-alarms|ec2|rds)/|^docs/shared-infrastructure-contract\.md$",
+    ),
+    (
+        "dr-ec2",
+        "terraform/environments/dr/ec2",
+        r"^terraform/environments/dr/ec2/|^terraform/modules/(alb|aws-backup|cloudwatch-alarms|ec2|rds)/|^docs/shared-infrastructure-contract\.md$",
     ),
     (
         "primary-eks",

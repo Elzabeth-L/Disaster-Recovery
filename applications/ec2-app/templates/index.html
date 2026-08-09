@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VaultRix Tasks - Disaster Recovery Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation / Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="logo-icon">⚡</div>
+                <div>
+                    <h1 class="header-title">VaultRix Tasks</h1>
+                    <p class="header-subtitle">Disaster Recovery Demonstration Platform</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <span class="badge badge-env badge-{{ app_env.lower() }}" id="envBadge">
+                    REGION: {{ app_env }}
+                </span>
+                <span class="badge badge-status" id="appStatusBadge">
+                    <span class="status-dot dot-green"></span> App: Healthy
+                </span>
+                <span class="badge badge-status" id="dbStatusBadge">
+                    <span class="status-dot dot-yellow"></span> DB: Checking...
+                </span>
+            </div>
+        </header>
+
+        <!-- Summary Metrics Dashboard -->
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">📋</div>
+                <div class="metric-content">
+                    <span class="metric-label">Total Tasks</span>
+                    <span class="metric-value" id="metricTotal">0</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">✅</div>
+                <div class="metric-content">
+                    <span class="metric-label">Completed</span>
+                    <span class="metric-value metric-success" id="metricCompleted">0</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">⏳</div>
+                <div class="metric-content">
+                    <span class="metric-label">Pending</span>
+                    <span class="metric-value metric-warning" id="metricPending">0</span>
+                </div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🗄️</div>
+                <div class="metric-content">
+                    <span class="metric-label">Database Connection</span>
+                    <span class="metric-value" id="metricDbState">Checking</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace Grid -->
+        <main class="workspace-grid">
+            <!-- Create Task Form Section -->
+            <section class="card form-card">
+                <h2 class="card-title">➕ Create New Task</h2>
+                <form id="createTaskForm">
+                    <div class="form-group">
+                        <label for="taskTitle">Task Title</label>
+                        <input type="text" id="taskTitle" placeholder="e.g. Verify PostgreSQL replication state" required autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDesc">Description</label>
+                        <textarea id="taskDesc" rows="3" placeholder="Add operational notes or DR task details..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority</label>
+                        <div class="priority-selector">
+                            <label class="priority-option">
+                                <input type="radio" name="priority" value="low">
+                                <span class="priority-btn btn-low">Low</span>
+                            </label>
+                            <label class="priority-option">
+                                <input type="radio" name="priority" value="medium" checked>
+                                <span class="priority-btn btn-medium">Medium</span>
+                            </label>
+                            <label class="priority-option">
+                                <input type="radio" name="priority" value="high">
+                                <span class="priority-btn btn-high">High</span>
+                            </label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnSubmit">
+                        <span id="btnSubmitText">Create Task</span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- DR Demonstration Panel -->
+            <section class="card dr-panel">
+                <div class="dr-panel-header">
+                    <h2 class="card-title">🛡️ DR / Database Demonstration</h2>
+                    <button class="btn btn-secondary btn-sm" id="btnRefreshDb">
+                        🔄 Refresh DB Status
+                    </button>
+                </div>
+                <div class="dr-info-grid">
+                    <div class="dr-info-item">
+                        <span class="dr-info-label">Active Environment</span>
+                        <span class="dr-info-value" id="drEnv">{{ app_env }}</span>
+                    </div>
+                    <div class="dr-info-item">
+                        <span class="dr-info-label">Database Host</span>
+                        <span class="dr-info-value" id="drHost">Fetching...</span>
+                    </div>
+                    <div class="dr-info-item">
+                        <span class="dr-info-label">Database Name</span>
+                        <span class="dr-info-value" id="drName">Fetching...</span>
+                    </div>
+                    <div class="dr-info-item">
+                        <span class="dr-info-label">Database Status</span>
+                        <span class="dr-info-value" id="drStatus">Checking...</span>
+                    </div>
+                    <div class="dr-info-item">
+                        <span class="dr-info-label">PostgreSQL Server Time</span>
+                        <span class="dr-info-value" id="drTime">N/A</span>
+                    </div>
+                    <div class="dr-info-item">
+                        <span class="dr-info-label">Persisted Tasks Count</span>
+                        <span class="dr-info-value" id="drCount">0</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Task List Section -->
+        <section class="card tasks-card">
+            <div class="tasks-header">
+                <h2 class="card-title">📋 Task Inventory</h2>
+                <div class="filter-group">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="pending">Pending</button>
+                    <button class="filter-btn" data-filter="completed">Completed</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="tasks-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title & Description</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Created Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        <tr>
+                            <td colspan="6" class="loading-cell">Loading tasks from PostgreSQL database...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

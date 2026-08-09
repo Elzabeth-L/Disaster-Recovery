@@ -1,0 +1,13 @@
+aws_region             = "ap-southeast-1"
+expected_aws_account_id = "598120810297"
+state_bucket           = "vaultrix-dr-598120810297-tfstate"
+state_region           = "ap-south-1"
+
+# Pin to the same immutable SHA as primary (same image, APP_ENV=DR is injected via EC2 module)
+app_image              = "ghcr.io/elzabeth-l/vaultrix-ec2-app:latest"
+
+backup_schedule        = "cron(0 2 * * ? *)"
+backup_retention_days  = 30
+
+# Email address for CloudWatch alarm SNS notifications in DR region
+alarm_email = ""

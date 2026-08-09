@@ -1,4 +1,18 @@
 aws_region             = "ap-south-1"
-expected_aws_account_id = "123456789012"
-state_bucket           = "vaultrix-dr-123456789012-tfstate"
+expected_aws_account_id = "598120810297"
+cost_acknowledgement     = "APPROVE_PRIMARY_EC2_COSTS"
+state_bucket           = "vaultrix-dr-598120810297-tfstate"
 state_region           = "ap-south-1"
+
+# Pin to an immutable SHA digest from the GHCR build workflow
+app_image              = "ghcr.io/elzabeth-l/vaultrix-ec2-app:latest"
+
+backup_schedule        = "cron(0 2 * * ? *)"
+backup_retention_days  = 30
+
+# DR vault ARN for cross-region backup copy (fill in after dr/ec2 terraform apply)
+# Format: arn:aws:backup:ap-southeast-1:598120810297:backup-vault:vaultrix-dr-dr-ec2-backup-vault
+copy_action_destination_vault_arn = null
+
+# Email address for CloudWatch alarm SNS notifications
+alarm_email = ""

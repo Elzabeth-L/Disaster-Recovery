@@ -1,10 +1,10 @@
-# Read primary shared network infrastructure state
-data "terraform_remote_state" "primary_shared" {
+# Read DR shared network infrastructure state
+data "terraform_remote_state" "dr_shared" {
   backend = "s3"
 
   config = {
     bucket       = var.state_bucket
-    key          = "primary/shared/terraform.tfstate"
+    key          = "dr/shared/terraform.tfstate"
     region       = var.state_region
     use_lockfile = true
   }
@@ -22,7 +22,7 @@ data "terraform_remote_state" "global_shared" {
   }
 }
 
-# Internet-Facing Application Load Balancer Module
+# DR Internet-Facing Application Load Balancer Module
 module "alb" {
   source = "../../../modules/alb"
 
@@ -34,7 +34,7 @@ module "alb" {
   common_tags       = local.common_tags
 }
 
-# Primary Private RDS PostgreSQL Instance Module
+# DR Private RDS PostgreSQL Instance Module
 module "rds" {
   source = "../../../modules/rds"
 
@@ -61,7 +61,7 @@ resource "aws_security_group_rule" "rds_ingress_ec2" {
   security_group_id        = module.rds.security_group_id
 }
 
-# Primary EC2 Compute Instance Module (Protected inside private subnet, trusting ALB SG & reading RDS secret)
+# DR EC2 Compute Instance Module (Protected inside private subnet, trusting ALB SG & reading DR RDS secret)
 module "ec2" {
   source = "../../../modules/ec2"
 
@@ -71,21 +71,19 @@ module "ec2" {
   ingress_security_group_ids = [module.alb.security_group_id]
   app_port                   = 8080
   app_image                  = var.app_image
-  app_env                    = "PRIMARY"
+  app_env                    = "DR"
   db_secret_arn              = module.rds.secret_arn
   enable_db_secret_access    = true
   common_tags                = local.common_tags
 }
 
-# AWS Backup Foundation Module (Protecting Primary EC2 Instance & Private RDS Database)
-# cross-region copy to DR vault ensures RPO < 26h for DR data continuity
+# DR AWS Backup Vault & Plan Module (in ap-southeast-1)
 module "aws_backup" {
   source = "../../../modules/aws-backup"
 
-  name_prefix                       = local.name_prefix
-  backup_schedule                   = var.backup_schedule
-  backup_retention_days             = var.backup_retention_days
-  copy_action_destination_vault_arn = var.copy_action_destination_vault_arn
+  name_prefix           = local.name_prefix
+  backup_schedule       = var.backup_schedule
+  backup_retention_days = var.backup_retention_days
   selection_resources = [
     module.ec2.instance_arn,
     module.rds.db_instance_arn
@@ -93,7 +91,7 @@ module "aws_backup" {
   common_tags = local.common_tags
 }
 
-# CloudWatch Alarms: ALB, EC2, and RDS health & performance monitoring
+# CloudWatch Alarms: ALB, EC2, and RDS health & performance monitoring in DR region
 module "cloudwatch_alarms" {
   source = "../../../modules/cloudwatch-alarms"
 
@@ -106,8 +104,8 @@ module "cloudwatch_alarms" {
   common_tags             = local.common_tags
 }
 
-# Route 53 Health Check for Primary EC2 ALB Health Endpoint (/health)
-resource "aws_route53_health_check" "primary_ec2" {
+# Route 53 Health Check for DR EC2 ALB Health Endpoint (/health)
+resource "aws_route53_health_check" "dr_ec2" {
   fqdn              = module.alb.alb_dns_name
   port              = 80
   type              = "HTTP"
@@ -118,23 +116,23 @@ resource "aws_route53_health_check" "primary_ec2" {
   tags = merge(
     local.common_tags,
     {
-      Name = "${local.name_prefix}-primary-alb-health-check"
+      Name = "${local.name_prefix}-dr-alb-health-check"
     }
   )
 }
 
-# Route 53 Primary Failover Alias Record (ec2.dr.vaultrix.in -> Primary ALB)
-resource "aws_route53_record" "primary_ec2_alias" {
+# Route 53 Secondary Failover Alias Record (ec2.dr.vaultrix.in -> DR ALB)
+resource "aws_route53_record" "dr_ec2_alias" {
   zone_id = local.global_route53_zone_id
   name    = "ec2.${local.global_route53_zone_name}"
   type    = "A"
 
   failover_routing_policy {
-    type = "PRIMARY"
+    type = "SECONDARY"
   }
 
-  set_identifier  = "PRIMARY"
-  health_check_id = aws_route53_health_check.primary_ec2.id
+  set_identifier  = "SECONDARY"
+  health_check_id = aws_route53_health_check.dr_ec2.id
 
   alias {
     name                   = module.alb.alb_dns_name
@@ -142,4 +140,3 @@ resource "aws_route53_record" "primary_ec2_alias" {
     evaluate_target_health = true
   }
 }
-

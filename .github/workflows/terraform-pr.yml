@@ -80,17 +80,8 @@ jobs:
       - name: Validate configuration
         run: terraform validate -no-color
 
-      - name: Prohibit workload resources in Phase 6 consumer root
-        if: matrix.name == 'primary-ec2'
-        shell: pwsh
-        run: |
-          $resourceCount = @(Get-ChildItem -Filter '*.tf' | Select-String -Pattern '^\s*(resource|module)\s+"').Count
-          if ($resourceCount -ne 0) {
-            throw "Phase 6 primary/ec2 must contain zero resource and module blocks."
-          }
-
   ec2-consumer-plan:
-    name: Plan primary EC2 consumer (no resources)
+    name: Plan primary EC2 platform
     needs:
       - changes
       - validate
@@ -134,13 +125,26 @@ jobs:
             -backend-config="encrypt=true" \
             -backend-config="use_lockfile=true"
 
-      - name: Prove read-only shared-state consumption
+      - name: Produce speculative cost-bearing plan
+        id: ec2_plan
+        shell: bash
         run: |
+          set -o pipefail
           terraform plan -input=false -lock=false -no-color \
-            -detailed-exitcode \
             -var="expected_aws_account_id=598120810297" \
             -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
-            -var="state_region=ap-south-1"
+            -var="state_region=ap-south-1" \
+            -var="cost_acknowledgement=APPROVE_PRIMARY_EC2_COSTS" \
+            2>&1 | tee ec2-plan.log
+
+      - name: Upload EC2 plan diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: primary-ec2-plan-diagnostics-${{ github.run_id }}
+          path: terraform/environments/primary/ec2/ec2-plan.log
+          if-no-files-found: error
+          retention-days: 2
 
   primary-eks-plan:
     name: Plan primary EKS (cost gate enabled)
