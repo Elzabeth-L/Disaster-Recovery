@@ -61,6 +61,12 @@ variable "db_secret_arn" {
   default     = null
 }
 
+variable "enable_db_secret_access" {
+  description = "Whether to create the IAM policy that reads db_secret_arn. This must be known during planning."
+  type        = bool
+  default     = false
+}
+
 variable "app_image" {
   description = "GHCR Docker image reference to deploy on the EC2 instance."
   type        = string

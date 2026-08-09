@@ -106,7 +106,7 @@ resource "aws_iam_role_policy_attachment" "ssm_core" {
 
 # Tightly-scoped IAM policy statement allowing reading specific RDS secret in Secrets Manager
 resource "aws_iam_role_policy" "read_db_secret" {
-  count = var.db_secret_arn != null ? 1 : 0
+  count = var.enable_db_secret_access ? 1 : 0
   name  = "${var.name_prefix}-read-db-secret"
   role  = aws_iam_role.ssm.id
 

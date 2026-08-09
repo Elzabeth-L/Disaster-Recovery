@@ -73,6 +73,7 @@ module "ec2" {
   app_image                  = var.app_image
   app_env                    = "DR"
   db_secret_arn              = module.rds.secret_arn
+  enable_db_secret_access    = true
   common_tags                = local.common_tags
 }
 
