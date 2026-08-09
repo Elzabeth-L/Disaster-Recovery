@@ -7,5 +7,5 @@ commonLabels:
   environment: primary
 images:
   - name: notes-app
-    newName: 598120810297.dkr.ecr.ap-south-1.amazonaws.com/vaultrix-dr-notes
+    newName: ghcr.io/elzabeth-l/vaultrix-eks-notes
     newTag: replace-me
