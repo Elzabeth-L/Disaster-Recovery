@@ -20,9 +20,9 @@ variable "github_apply_role_arn" {
 }
 
 variable "node_instance_types" {
-  description = "ARM64 instance types for the managed node group."
+  description = "ARM64 instance types for the managed node group; must satisfy account eligibility restrictions."
   type        = list(string)
-  default     = ["t4g.medium"]
+  default     = ["t4g.small"]
 }
 
 variable "node_desired_size" {
