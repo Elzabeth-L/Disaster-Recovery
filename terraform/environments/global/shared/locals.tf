@@ -220,6 +220,7 @@ locals {
   ]
 
   ec2_apply_actions = [
+    "backup-storage:MountCapsule",
     "backup:CreateBackupPlan",
     "backup:CreateBackupSelection",
     "backup:CreateBackupVault",
@@ -238,6 +239,7 @@ locals {
     "ec2:CreateSecurityGroup",
     "ec2:CreateTags",
     "ec2:DeleteSecurityGroup",
+    "ec2:GetSecurityGroupsForVpc",
     "ec2:RevokeSecurityGroupEgress",
     "ec2:RevokeSecurityGroupIngress",
     "ec2:RunInstances",
@@ -271,6 +273,10 @@ locals {
     "iam:TagRole",
     "iam:UntagInstanceProfile",
     "iam:UntagRole",
+    "kms:CreateGrant",
+    "kms:Decrypt",
+    "kms:GenerateDataKey",
+    "kms:RetireGrant",
     "rds:AddTagsToResource",
     "rds:CreateDBInstance",
     "rds:CreateDBSubnetGroup",
@@ -293,6 +299,7 @@ locals {
     "secretsmanager:UpdateSecret",
     "sns:CreateTopic",
     "sns:DeleteTopic",
+    "sns:SetTopicAttributes",
     "sns:Subscribe",
     "sns:TagResource",
     "sns:Unsubscribe",
