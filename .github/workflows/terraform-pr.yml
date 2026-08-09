@@ -126,12 +126,25 @@ jobs:
             -backend-config="use_lockfile=true"
 
       - name: Produce speculative cost-bearing plan
+        id: ec2_plan
+        shell: bash
         run: |
+          set -o pipefail
           terraform plan -input=false -lock=false -no-color \
             -var="expected_aws_account_id=598120810297" \
             -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
             -var="state_region=ap-south-1" \
-            -var="cost_acknowledgement=APPROVE_PRIMARY_EC2_COSTS"
+            -var="cost_acknowledgement=APPROVE_PRIMARY_EC2_COSTS" \
+            2>&1 | tee ec2-plan.log
+
+      - name: Upload EC2 plan diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: primary-ec2-plan-diagnostics-${{ github.run_id }}
+          path: terraform/environments/primary/ec2/ec2-plan.log
+          if-no-files-found: error
+          retention-days: 2
 
   primary-eks-plan:
     name: Plan primary EKS (cost gate enabled)
