@@ -12,6 +12,19 @@ data "aws_eks_addon_version" "selected" {
   most_recent        = true
 }
 
+locals {
+  bootstrap_addons = toset([
+    "eks-pod-identity-agent",
+    "kube-proxy",
+    "vpc-cni",
+  ])
+
+  post_node_addons = toset([
+    "aws-ebs-csi-driver",
+    "coredns",
+  ])
+}
+
 resource "aws_cloudwatch_log_group" "cluster" {
   name              = "/aws/eks/${var.name_prefix}/cluster"
   retention_in_days = 30
@@ -86,12 +99,19 @@ resource "aws_eks_node_group" "primary" {
     max_unavailable = 1
   }
 
-  depends_on = [aws_iam_role_policy_attachment.nodes]
-  tags       = var.tags
+  depends_on = [
+    aws_eks_addon.bootstrap,
+    aws_eks_pod_identity_association.vpc_cni,
+    aws_iam_role_policy_attachment.nodes,
+  ]
+  tags = var.tags
 }
 
-resource "aws_eks_addon" "selected" {
-  for_each = data.aws_eks_addon_version.selected
+resource "aws_eks_addon" "bootstrap" {
+  for_each = {
+    for name, version in data.aws_eks_addon_version.selected : name => version
+    if contains(local.bootstrap_addons, name)
+  }
 
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = each.key
@@ -102,6 +122,21 @@ resource "aws_eks_addon" "selected" {
   configuration_values = each.key == "vpc-cni" ? jsonencode({
     enableNetworkPolicy = "true"
   }) : null
+
+  tags = var.tags
+}
+
+resource "aws_eks_addon" "post_node" {
+  for_each = {
+    for name, version in data.aws_eks_addon_version.selected : name => version
+    if contains(local.post_node_addons, name)
+  }
+
+  cluster_name                = aws_eks_cluster.this.name
+  addon_name                  = each.key
+  addon_version               = each.value.version
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "PRESERVE"
 
   depends_on = [aws_eks_node_group.primary]
   tags       = var.tags
