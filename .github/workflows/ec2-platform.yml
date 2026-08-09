@@ -57,8 +57,8 @@ jobs:
             -var="cost_acknowledgement=APPROVE_PRIMARY_EC2_COSTS"
           terraform show -no-color phase7b.tfplan > phase7b-plan.txt
 
-      - name: Upload exact plan for protected apply
-        if: inputs.operation == 'Apply'
+      - name: Upload exact reviewed plan
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: phase7b-plan-${{ github.run_id }}
