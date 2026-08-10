@@ -10,7 +10,7 @@ Repository variables hold the six non-secret IAM role ARNs and the primary/DR Re
 - `eks-apply`
 - `ec2-apply`
 
-Each environment accepts deployments only from protected branches. `@Elzabeth-L` and `@gokulk18` are reviewers, and self-review is prohibited. The engineer who starts an apply therefore cannot approve it alone.
+Each environment accepts deployments only from protected branches. `@Elzabeth-L` is an eligible reviewer; `@gokulk18` remains an additional reviewer where configured. Self-review is allowed so either engineer can complete an approved deployment when the other is unavailable.
 
 ## Trust subjects
 
@@ -18,14 +18,12 @@ Plan roles accept only this repository's immutable-ID `pull_request` subject and
 
 The account-level provider `token.actions.githubusercontent.com` already existed and is managed by another project's Terraform state. This project references it read-only and owns only its six roles/policies.
 
-## Smoke test
+## Authentication verification
 
-Run **Admin - AWS OIDC smoke test** manually with a scope and access type. Plan tests run immediately from `main`. Apply tests pause for the configured environment approval. The workflow requests only `contents: read` and `id-token: write`, obtains temporary AWS credentials, and checks that STS returned the expected role.
-
-The smoke workflow proves authentication only; it does not run Terraform or mutate AWS. Normal infrastructure workflows are added in Phase 6 with path filters, state-specific concurrency, reviewed plans, typed DR confirmation, and the owning apply environment.
+The temporary OIDC smoke-test workflow was removed after all six trust paths were verified. Use the read-only `Plan` operation in the owning infrastructure workflow to verify authentication without mutating AWS. Apply operations continue to use state-specific concurrency, reviewed exact plans, typed DR confirmation, and the owning protected environment.
 
 ## Permission evolution
 
-Current roles provide scoped Terraform-state access, read-oriented service discovery, explicit cross-owner state-write denials, and owner-specific DNS changes for apply roles. They intentionally do not have broad workload mutation permissions. Phase 7A adds only the reviewed EKS permissions; Phase 7B adds only the reviewed EC2/RDS permissions.
+Current roles provide scoped Terraform-state access, explicit cross-owner state-write denials, and only the reviewed EKS, EC2/RDS, temporary DR egress, DNS, and application-deployment permissions required by this project.
 
 To disable CI access, disable the workflows/environments first, then remove the role trust or roles through the global/shared state. Do not delete or mutate the shared account OIDC provider because another Terraform state owns it.
