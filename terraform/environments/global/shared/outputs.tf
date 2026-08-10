@@ -38,9 +38,14 @@ output "github_ec2_role_arn" {
   value       = aws_iam_role.github["ec2_apply"].arn
 }
 
-output "eks_console_admin_role_arn" {
-  description = "Dedicated human-operated role authorized in both project EKS clusters."
-  value       = aws_iam_role.eks_console_admin.arn
+output "eks_operator_user_arn" {
+  description = "Dedicated human-operated IAM user authorized in both project EKS clusters."
+  value       = aws_iam_user.eks_operator.arn
+}
+
+output "ec2_operator_user_arn" {
+  description = "Dedicated human-operated IAM user authorized for project EC2 Session Manager access."
+  value       = aws_iam_user.ec2_operator.arn
 }
 
 output "github_plan_role_arns" {

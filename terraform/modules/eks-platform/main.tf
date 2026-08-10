@@ -79,23 +79,23 @@ resource "aws_eks_access_policy_association" "github_apply" {
   }
 }
 
-resource "aws_eks_access_entry" "console_admin" {
+resource "aws_eks_access_entry" "eks_operator" {
   cluster_name  = aws_eks_cluster.this.name
-  principal_arn = var.console_admin_role_arn
+  principal_arn = var.eks_operator_user_arn
   type          = "STANDARD"
   tags          = var.tags
 }
 
-resource "aws_eks_access_policy_association" "console_admin" {
+resource "aws_eks_access_policy_association" "eks_operator" {
   cluster_name  = aws_eks_cluster.this.name
-  principal_arn = var.console_admin_role_arn
+  principal_arn = var.eks_operator_user_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
   }
 
-  depends_on = [aws_eks_access_entry.console_admin]
+  depends_on = [aws_eks_access_entry.eks_operator]
 }
 
 resource "aws_eks_node_group" "primary" {
