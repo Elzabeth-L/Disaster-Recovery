@@ -8,7 +8,7 @@
    the exact plan artifact created in that run by using GitHub OIDC; it uses no stored AWS keys.
 4. Confirm the cluster is Active, two nodes are Ready, and `vpc-cni`, `coredns`, `kube-proxy`, Pod
    Identity agent, and EBS CSI are healthy.
-5. Dispatch `Deploy primary EKS notes application`. It builds ARM64, pushes an immutable image,
+5. Dispatch `Primary 2 - EKS application`. It builds ARM64, pushes an immutable image,
    installs AWS Load Balancer Controller `3.3.0`, creates/reads database credentials in Secrets
    Manager, applies Kustomize, waits for rollouts and ALB health, then publishes DNS.
 6. Create a marker note. Delete one app Pod and confirm the service remains available. Delete the
@@ -17,6 +17,31 @@
 
 Never print the Secrets Manager value, commit a generated kubeconfig, or replace the immutable image
 digest with a mutable tag.
+
+## CloudShell access
+
+Use the Terraform-managed `vaultrix-dr-eks-console-admin` role instead of the AWS account root or the
+GitHub deployment role. The role is an EKS cluster administrator only in the two project clusters.
+
+Primary cluster:
+
+```bash
+aws eks update-kubeconfig \
+  --name vaultrix-dr-primary-eks \
+  --region ap-south-1 \
+  --role-arn arn:aws:iam::598120810297:role/vaultrix-dr-eks-console-admin
+kubectl get nodes
+```
+
+DR cluster:
+
+```bash
+aws eks update-kubeconfig \
+  --name vaultrix-dr-dr-eks \
+  --region ap-southeast-1 \
+  --role-arn arn:aws:iam::598120810297:role/vaultrix-dr-eks-console-admin
+kubectl get nodes
+```
 
 ## Troubleshoot private-node egress
 

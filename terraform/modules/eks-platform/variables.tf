@@ -19,6 +19,16 @@ variable "github_apply_role_arn" {
   type        = string
 }
 
+variable "console_admin_role_arn" {
+  description = "Dedicated human-operated IAM role granted EKS cluster administrator access."
+  type        = string
+
+  validation {
+    condition     = can(regex("^arn:aws:iam::[0-9]{12}:role/vaultrix-dr-eks-console-admin$", var.console_admin_role_arn))
+    error_message = "console_admin_role_arn must identify the dedicated vaultrix-dr-eks-console-admin role."
+  }
+}
+
 variable "node_instance_types" {
   description = "ARM64 instance types for the managed node group; must satisfy account eligibility restrictions."
   type        = list(string)
