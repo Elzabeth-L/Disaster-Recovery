@@ -12,16 +12,16 @@ This drill demonstrates recovery from Mumbai (`ap-south-1`) into temporary Singa
 - EKS uses an approved Route 53 cutover because an EKS control plane cannot be stopped.
 - Failback returns both names to Mumbai and cleanup removes temporary DR resources.
 
-The recovery point is the time `Deploy and seed DR applications` captures the APIs. Writes made after that capture are outside this demonstration's RPO.
+The recovery point is the time **DR 2 - Drill** runs `Deploy or refresh DR applications` and captures the APIs. Writes made after that capture are outside this demonstration's RPO.
 
 ## One-time preparation before the meeting
 
-In GitHub, open **Actions** and run **DR platform deploy and cleanup** against `main` in this order:
+In GitHub, open **Actions** and run **DR 1 - Infrastructure** against `main` in this order:
 
 1. `component=shared-egress`, `operation=Apply deploy`.
 2. `component=eks`, `operation=Apply deploy`.
 3. `component=ec2`, `operation=Apply deploy`.
-4. Run **Deploy and seed DR applications**.
+4. Run **DR 2 - Drill** with `operation=Deploy or refresh DR applications`.
 
 Review and approve each protected environment only after its plan summary matches the expected scope. Preparation is complete when all four workflows pass and these diagnostic endpoints work:
 
@@ -45,7 +45,7 @@ http://ec2.dr.vaultrix.in
 
 Create one clearly named item in each application, such as `Before DR drill`. Explain that Mumbai is currently authoritative.
 
-If those items were created after the preparation snapshot, rerun **Deploy and seed DR applications** before failover so they are included in the recovery point.
+If those items were created after the preparation snapshot, rerun **DR 2 - Drill** with `operation=Deploy or refresh DR applications` before failover so they are included in the recovery point.
 
 ### 2. Show the prepared recovery environment
 
@@ -64,10 +64,10 @@ Show that the copied notes/tasks are present. In the EC2 status API, point out:
 
 ### 3. Declare and execute failover
 
-Run **Execute DR failover or failback demo** with:
+Run **DR 2 - Drill** with:
 
 ```text
-action=Failover
+operation=Failover to DR
 confirmation=DEMONSTRATE_DR
 ```
 
@@ -89,10 +89,10 @@ State the important limitation: this minimal drill does not merge DR-time writes
 
 ### 5. Execute failback
 
-Run **Execute DR failover or failback demo** with:
+Run **DR 2 - Drill** with:
 
 ```text
-action=Failback
+operation=Failback to primary
 confirmation=DEMONSTRATE_DR
 ```
 
@@ -111,10 +111,10 @@ The EC2 response must again show `environment=PRIMARY` and `database=connected`.
 
 Run these only after failback succeeds:
 
-1. **Remove DR application-layer resources**, confirmation `CLEANUP_DR_APPS`.
-2. **DR platform deploy and cleanup**: `component=eks`, `operation=Apply cleanup`.
-3. **DR platform deploy and cleanup**: `component=ec2`, `operation=Apply cleanup`.
-4. **DR platform deploy and cleanup**: `component=shared-egress`, `operation=Apply cleanup`.
+1. **DR 2 - Drill**: `operation=Remove DR applications`, confirmation `CLEANUP_DR_APPS`.
+2. **DR 1 - Infrastructure**: `component=eks`, `operation=Apply cleanup`.
+3. **DR 1 - Infrastructure**: `component=ec2`, `operation=Apply cleanup`.
+4. **DR 1 - Infrastructure**: `component=shared-egress`, `operation=Apply cleanup`.
 
 Finish by running read-only cleanup plans for all three components. Each must report `No changes` with deployment disabled/cleanup selected.
 

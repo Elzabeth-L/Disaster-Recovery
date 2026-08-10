@@ -1,4 +1,4 @@
-name: Build and deploy primary EC2 notes application
+name: Primary 4 - EC2 application
 
 on:
   push:

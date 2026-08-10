@@ -1,13 +1,12 @@
-name: Execute DR failover or failback demo
+name: DR internal - Traffic cutover
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       action:
         description: Failover activates Singapore; failback restores Mumbai
         required: true
-        type: choice
-        options: [Failover, Failback]
+        type: string
       confirmation:
         description: Type DEMONSTRATE_DR
         required: true

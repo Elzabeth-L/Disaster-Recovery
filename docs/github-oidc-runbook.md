@@ -20,7 +20,7 @@ The account-level provider `token.actions.githubusercontent.com` already existed
 
 ## Smoke test
 
-Run **AWS OIDC smoke test** manually with a scope and access type. Plan tests run immediately from `main`. Apply tests pause for the other engineer's environment approval. The workflow requests only `contents: read` and `id-token: write`, obtains temporary AWS credentials, and checks that STS returned the expected role.
+Run **Admin - AWS OIDC smoke test** manually with a scope and access type. Plan tests run immediately from `main`. Apply tests pause for the configured environment approval. The workflow requests only `contents: read` and `id-token: write`, obtains temporary AWS credentials, and checks that STS returned the expected role.
 
 The smoke workflow proves authentication only; it does not run Terraform or mutate AWS. Normal infrastructure workflows are added in Phase 6 with path filters, state-specific concurrency, reviewed plans, typed DR confirmation, and the owning apply environment.
 

@@ -1,4 +1,4 @@
-name: Build and deploy primary EKS notes application
+name: Primary 2 - EKS application
 
 on:
   workflow_dispatch:

@@ -3,7 +3,7 @@
 ## Deploy
 
 1. Confirm the primary shared NAT instance and all four EC2/EKS private default routes are healthy.
-2. Review the `Primary EKS platform` Plan workflow summary and current AWS cost estimate.
+2. Review the `Primary 1 - EKS infrastructure` Plan workflow summary and current AWS cost estimate.
 3. After explicit cost approval, dispatch the same workflow with `Apply`. The protected job applies
    the exact plan artifact created in that run by using GitHub OIDC; it uses no stored AWS keys.
 4. Confirm the cluster is Active, two nodes are Ready, and `vpc-cni`, `coredns`, `kube-proxy`, Pod

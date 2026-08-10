@@ -1,4 +1,4 @@
-name: Primary EKS platform
+name: Primary 1 - EKS infrastructure
 
 on:
   workflow_dispatch:
