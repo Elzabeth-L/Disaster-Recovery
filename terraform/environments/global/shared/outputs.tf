@@ -38,6 +38,11 @@ output "github_ec2_role_arn" {
   value       = aws_iam_role.github["ec2_apply"].arn
 }
 
+output "eks_console_admin_role_arn" {
+  description = "Dedicated human-operated role authorized in both project EKS clusters."
+  value       = aws_iam_role.eks_console_admin.arn
+}
+
 output "github_plan_role_arns" {
   description = "Read-oriented plan-role ARNs keyed by ownership scope."
   value = {

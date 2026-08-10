@@ -265,3 +265,54 @@ resource "aws_iam_role_policy" "github" {
   role   = aws_iam_role.github[each.key].id
   policy = data.aws_iam_policy_document.github[each.key].json
 }
+
+data "aws_iam_policy_document" "eks_console_admin_trust" {
+  statement {
+    sid     = "AccountConsoleAccess"
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.expected_aws_account_id}:root"]
+    }
+  }
+}
+
+resource "aws_iam_role" "eks_console_admin" {
+  name                 = "vaultrix-dr-eks-console-admin"
+  description          = "Human-operated kubectl access to the VaultRix primary and DR EKS clusters."
+  assume_role_policy   = data.aws_iam_policy_document.eks_console_admin_trust.json
+  max_session_duration = 3600
+
+  tags = {
+    Name   = "vaultrix-dr-eks-console-admin"
+    Scope  = "eks"
+    Access = "console-admin"
+  }
+}
+
+data "aws_iam_policy_document" "eks_console_admin" {
+  statement {
+    sid       = "ListClusters"
+    effect    = "Allow"
+    actions   = ["eks:ListClusters"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid     = "DescribeProjectClusters"
+    effect  = "Allow"
+    actions = ["eks:DescribeCluster"]
+    resources = [
+      "arn:aws:eks:ap-south-1:${var.expected_aws_account_id}:cluster/vaultrix-dr-primary-eks",
+      "arn:aws:eks:ap-southeast-1:${var.expected_aws_account_id}:cluster/vaultrix-dr-dr-eks",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "eks_console_admin" {
+  name   = "vaultrix-dr-cluster-discovery"
+  role   = aws_iam_role.eks_console_admin.id
+  policy = data.aws_iam_policy_document.eks_console_admin.json
+}
