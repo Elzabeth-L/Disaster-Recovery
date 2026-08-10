@@ -1,5 +1,5 @@
 locals {
-  contract_version = "v1"
+  contract_version = "1.0.0"
 
   raw_dr_shared_outputs     = data.terraform_remote_state.dr_shared.outputs
   raw_global_shared_outputs = data.terraform_remote_state.global_shared.outputs
@@ -30,6 +30,7 @@ locals {
     ManagedBy            = "terraform"
     Ownership            = "ec2"
     ContractVersion      = local.contract_version
+    Expiration           = "temporary-dr-drill"
     DisasterRecoveryRole = "standby"
   }
 }
@@ -37,13 +38,13 @@ locals {
 check "dr_shared_contract_version" {
   assert {
     condition     = local.valid_dr_contract
-    error_message = "The dr/shared state must expose contract_version = \"v1\"."
+    error_message = "The dr/shared state must expose contract_version = \"1.0.0\"."
   }
 }
 
 check "global_shared_contract_version" {
   assert {
     condition     = local.valid_global_contract
-    error_message = "The global/shared state must expose contract_version = \"v1\"."
+    error_message = "The global/shared state must expose contract_version = \"1.0.0\"."
   }
 }

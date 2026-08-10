@@ -1,0 +1,155 @@
+name: DR platform deploy and cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Temporary DR component
+        required: true
+        type: choice
+        options: [shared-egress, eks, ec2]
+      operation:
+        description: Plan is read-only; Apply uses the exact saved plan
+        required: true
+        type: choice
+        options: [Plan deploy, Apply deploy, Plan cleanup, Apply cleanup]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      tf_root: ${{ steps.config.outputs.tf_root }}
+      state_key: ${{ steps.config.outputs.state_key }}
+      region: ${{ steps.config.outputs.region }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Select isolated state and Region
+        id: config
+        shell: bash
+        run: |
+          case "${{ inputs.component }}" in
+            shared-egress)
+              echo 'tf_root=terraform/environments/dr/shared' >> "${GITHUB_OUTPUT}"
+              echo 'state_key=dr/shared/terraform.tfstate' >> "${GITHUB_OUTPUT}"
+              ;;
+            eks)
+              echo 'tf_root=terraform/environments/dr/eks' >> "${GITHUB_OUTPUT}"
+              echo 'state_key=dr/eks/terraform.tfstate' >> "${GITHUB_OUTPUT}"
+              ;;
+            ec2)
+              echo 'tf_root=terraform/environments/dr/ec2' >> "${GITHUB_OUTPUT}"
+              echo 'state_key=dr/ec2/terraform.tfstate' >> "${GITHUB_OUTPUT}"
+              ;;
+          esac
+          echo 'region=ap-southeast-1' >> "${GITHUB_OUTPUT}"
+
+      - name: Configure short-lived plan credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ inputs.component == 'shared-egress' && vars.AWS_SHARED_PLAN_ROLE_ARN || inputs.component == 'eks' && vars.AWS_EKS_PLAN_ROLE_ARN || vars.AWS_EC2_PLAN_ROLE_ARN }}
+          aws-region: ap-southeast-1
+          role-session-name: dr-plan-${{ inputs.component }}-${{ github.run_id }}
+
+      - name: Initialize isolated state
+        shell: bash
+        run: |
+          terraform -chdir="${{ steps.config.outputs.tf_root }}" init \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=${{ steps.config.outputs.state_key }}" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Create exact DR plan
+        shell: bash
+        run: |
+          enabled=true
+          [[ "${{ inputs.operation }}" == *cleanup ]] && enabled=false
+          args=(
+            -lock=false
+            -out=dr.tfplan
+            -var=expected_aws_account_id=598120810297
+            -var=cost_acknowledgement=APPROVE_DR_DRILL_COSTS
+          )
+          case "${{ inputs.component }}" in
+            shared-egress)
+              args+=( -var=owner=Elzabeth-L -var="recovery_egress_enabled=${enabled}" )
+              ;;
+            eks)
+              args+=( -var=state_bucket=vaultrix-dr-598120810297-tfstate -var="deployment_enabled=${enabled}" )
+              ;;
+            ec2)
+              args+=( -var=state_bucket=vaultrix-dr-598120810297-tfstate )
+              [[ "${enabled}" == false ]] && args+=( -destroy )
+              ;;
+          esac
+          terraform -chdir="${{ steps.config.outputs.tf_root }}" plan "${args[@]}"
+          terraform -chdir="${{ steps.config.outputs.tf_root }}" show -no-color dr.tfplan > "${{ steps.config.outputs.tf_root }}/dr-plan.txt"
+
+      - name: Upload exact DR plan
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dr-${{ inputs.component }}-plan-${{ github.run_id }}
+          path: |
+            ${{ steps.config.outputs.tf_root }}/dr.tfplan
+            ${{ steps.config.outputs.tf_root }}/dr-plan.txt
+          retention-days: 2
+
+      - name: Publish plan summary
+        run: cat "${{ steps.config.outputs.tf_root }}/dr-plan.txt" >> "${GITHUB_STEP_SUMMARY}"
+
+  apply:
+    if: startsWith(inputs.operation, 'Apply')
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.component == 'shared-egress' && 'shared-apply' || inputs.component == 'eks' && 'eks-apply' || 'ec2-apply' }}
+    steps:
+      - name: Check out exact repository revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure short-lived apply credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ inputs.component == 'shared-egress' && vars.AWS_SHARED_APPLY_ROLE_ARN || inputs.component == 'eks' && vars.AWS_EKS_APPLY_ROLE_ARN || vars.AWS_EC2_APPLY_ROLE_ARN }}
+          aws-region: ap-southeast-1
+          role-session-name: dr-apply-${{ inputs.component }}-${{ github.run_id }}
+
+      - name: Initialize isolated state
+        shell: bash
+        run: |
+          terraform -chdir="${{ needs.plan.outputs.tf_root }}" init \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=${{ needs.plan.outputs.state_key }}" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Download exact reviewed plan
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dr-${{ inputs.component }}-plan-${{ github.run_id }}
+          path: ${{ needs.plan.outputs.tf_root }}
+
+      - name: Apply exact reviewed plan
+        run: terraform -chdir="${{ needs.plan.outputs.tf_root }}" apply -auto-approve dr.tfplan

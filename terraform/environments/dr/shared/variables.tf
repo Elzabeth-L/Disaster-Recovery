@@ -34,3 +34,22 @@ variable "cost_center" {
   type        = string
   default     = "disaster-recovery-lab"
 }
+
+variable "recovery_egress_enabled" {
+  description = "Enable the temporary cost-first NAT instance during a declared DR drill."
+  type        = bool
+  default     = false
+}
+
+variable "cost_acknowledgement" {
+  description = "Required acknowledgement when temporary DR egress is enabled."
+  type        = string
+  default     = ""
+}
+
+check "recovery_egress_cost_gate" {
+  assert {
+    condition     = !var.recovery_egress_enabled || var.cost_acknowledgement == "APPROVE_DR_DRILL_COSTS"
+    error_message = "Set cost_acknowledgement to APPROVE_DR_DRILL_COSTS when enabling temporary DR egress."
+  }
+}

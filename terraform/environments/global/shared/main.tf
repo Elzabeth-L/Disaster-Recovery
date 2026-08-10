@@ -140,6 +140,17 @@ data "aws_iam_policy_document" "github" {
   }
 
   dynamic "statement" {
+    for_each = each.key == "shared_apply" ? [1] : []
+
+    content {
+      sid       = "ManageTemporaryRecoveryEgress"
+      effect    = "Allow"
+      actions   = local.shared_apply_actions
+      resources = ["*"]
+    }
+  }
+
+  dynamic "statement" {
     for_each = each.key == "eks_apply" ? [1] : []
 
     content {
@@ -213,7 +224,7 @@ data "aws_iam_policy_document" "github" {
       sid       = "PassOwnedEksRoles"
       effect    = "Allow"
       actions   = ["iam:PassRole"]
-      resources = ["arn:aws:iam::${var.expected_aws_account_id}:role/vaultrix-dr-primary-eks-*"]
+      resources = ["arn:aws:iam::${var.expected_aws_account_id}:role/vaultrix-dr-*-eks-*"]
 
       condition {
         test     = "StringEquals"

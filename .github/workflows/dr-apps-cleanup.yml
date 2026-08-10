@@ -1,0 +1,58 @@
+name: Remove DR application-layer resources
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type CLEANUP_DR_APPS after failback
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  eks:
+    runs-on: ubuntu-latest
+    environment: eks-apply
+    steps:
+      - name: Validate confirmation
+        run: test '${{ inputs.confirmation }}' = CLEANUP_DR_APPS
+
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
+
+      - name: Configure DR EKS credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_EKS_APPLY_ROLE_ARN }}
+          aws-region: ap-southeast-1
+          role-session-name: dr-app-cleanup-${{ github.run_id }}
+
+      - name: Remove Kubernetes workload and ALB
+        shell: bash
+        run: |
+          aws eks update-kubeconfig --name vaultrix-dr-dr-eks --region ap-southeast-1
+          kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.namespace == "notes") | .metadata.name' | while read -r pv; do
+            kubectl patch pv "${pv}" -p '{"spec":{"persistentVolumeReclaimPolicy":"Delete"}}'
+          done
+          kubectl delete -k kubernetes/overlays/dr --ignore-not-found --wait=true
+          helm uninstall aws-load-balancer-controller --namespace kube-system || true
+
+      - name: Remove diagnostic EKS DNS records
+        shell: bash
+        run: |
+          zone_id="$(aws route53 list-hosted-zones-by-name --dns-name dr.vaultrix.in --query 'HostedZones[?Name==`dr.vaultrix.in.`].Id | [0]' --output text)"
+          for name in eks-dr.dr.vaultrix.in. eks-primary.dr.vaultrix.in.; do
+            record="$(aws route53 list-resource-record-sets --hosted-zone-id "${zone_id}" --query "ResourceRecordSets[?Name=='${name}' && Type=='CNAME'] | [0]" --output json)"
+            [[ "${record}" == null ]] && continue
+            batch="$(jq -cn --argjson record "${record}" '{Changes:[{Action:"DELETE",ResourceRecordSet:$record}]}')"
+            aws route53 change-resource-record-sets --hosted-zone-id "${zone_id}" --change-batch "${batch}" >/dev/null
+          done

@@ -31,6 +31,16 @@ variable "state_region" {
   default     = "ap-south-1"
 }
 
+variable "cost_acknowledgement" {
+  description = "Required acknowledgement before planning or applying the temporary DR EC2 stack."
+  type        = string
+
+  validation {
+    condition     = var.cost_acknowledgement == "APPROVE_DR_DRILL_COSTS"
+    error_message = "Set cost_acknowledgement to APPROVE_DR_DRILL_COSTS for the temporary DR drill stack."
+  }
+}
+
 variable "app_image" {
   description = "Immutable GHCR Docker image reference to deploy on the DR EC2 instance."
   type        = string
@@ -46,7 +56,7 @@ variable "backup_schedule" {
 variable "backup_retention_days" {
   description = "Retention period in days for DR EC2 & RDS backups."
   type        = number
-  default     = 30
+  default     = 1
 }
 
 variable "alarm_email" {
