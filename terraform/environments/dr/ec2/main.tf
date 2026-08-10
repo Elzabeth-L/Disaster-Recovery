@@ -140,3 +140,16 @@ resource "aws_route53_record" "dr_ec2_alias" {
     evaluate_target_health = true
   }
 }
+
+# Stable diagnostic endpoint used to validate DR before traffic cutover.
+resource "aws_route53_record" "dr_ec2_diagnostic" {
+  zone_id = local.global_route53_zone_id
+  name    = "ec2-dr.${local.global_route53_zone_name}"
+  type    = "A"
+
+  alias {
+    name                   = module.alb.alb_dns_name
+    zone_id                = module.alb.alb_zone_id
+    evaluate_target_health = true
+  }
+}

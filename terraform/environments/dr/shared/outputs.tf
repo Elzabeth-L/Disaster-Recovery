@@ -74,6 +74,6 @@ output "egress_mode" {
 }
 
 output "nat_public_ip" {
-  description = "Always null for the Phase 3 pilot-light network."
+  description = "Temporary recovery egress public IP, or null in pilot-light mode."
   value       = module.network.nat_public_ip
 }

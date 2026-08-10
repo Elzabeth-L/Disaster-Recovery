@@ -134,8 +134,30 @@ locals {
     "servicequotas:List*",
     "sns:Get*",
     "sns:List*",
+    "ssm:GetParameter",
     "sts:GetCallerIdentity",
     "tag:GetResources",
+  ]
+
+  shared_apply_actions = [
+    "ec2:AllocateAddress",
+    "ec2:AssociateAddress",
+    "ec2:AuthorizeSecurityGroupEgress",
+    "ec2:AuthorizeSecurityGroupIngress",
+    "ec2:CreateRoute",
+    "ec2:CreateSecurityGroup",
+    "ec2:CreateTags",
+    "ec2:DeleteRoute",
+    "ec2:DeleteSecurityGroup",
+    "ec2:DisassociateAddress",
+    "ec2:GetSecurityGroupsForVpc",
+    "ec2:ModifyInstanceAttribute",
+    "ec2:ReleaseAddress",
+    "ec2:RevokeSecurityGroupEgress",
+    "ec2:RevokeSecurityGroupIngress",
+    "ec2:RunInstances",
+    "ec2:TerminateInstances",
+    "ssm:GetParameter",
   ]
 
   eks_apply_actions = [
