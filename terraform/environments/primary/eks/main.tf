@@ -39,11 +39,11 @@ module "eks_platform" {
   count  = var.deployment_enabled ? 1 : 0
   source = "../../../modules/eks-platform"
 
-  name_prefix            = local.name_prefix
-  kubernetes_version     = var.kubernetes_version
-  private_subnet_ids     = data.terraform_remote_state.primary_shared.outputs.eks_private_subnet_ids
-  github_apply_role_arn  = data.terraform_remote_state.global_shared.outputs.github_eks_role_arn
-  console_admin_role_arn = "arn:aws:iam::${var.expected_aws_account_id}:role/vaultrix-dr-eks-console-admin"
-  deletion_protection    = var.cluster_deletion_protection
-  tags                   = local.common_tags
+  name_prefix           = local.name_prefix
+  kubernetes_version    = var.kubernetes_version
+  private_subnet_ids    = data.terraform_remote_state.primary_shared.outputs.eks_private_subnet_ids
+  github_apply_role_arn = data.terraform_remote_state.global_shared.outputs.github_eks_role_arn
+  eks_operator_user_arn = "arn:aws:iam::${var.expected_aws_account_id}:user/vaultrix-dr-eks-operator"
+  deletion_protection   = var.cluster_deletion_protection
+  tags                  = local.common_tags
 }

@@ -19,13 +19,13 @@ variable "github_apply_role_arn" {
   type        = string
 }
 
-variable "console_admin_role_arn" {
-  description = "Dedicated human-operated IAM role granted EKS cluster administrator access."
+variable "eks_operator_user_arn" {
+  description = "Dedicated human-operated IAM user granted EKS cluster administrator access."
   type        = string
 
   validation {
-    condition     = can(regex("^arn:aws:iam::[0-9]{12}:role/vaultrix-dr-eks-console-admin$", var.console_admin_role_arn))
-    error_message = "console_admin_role_arn must identify the dedicated vaultrix-dr-eks-console-admin role."
+    condition     = can(regex("^arn:aws:iam::[0-9]{12}:user/vaultrix-dr-eks-operator$", var.eks_operator_user_arn))
+    error_message = "eks_operator_user_arn must identify the dedicated vaultrix-dr-eks-operator user."
   }
 }
 
