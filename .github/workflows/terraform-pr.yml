@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "terraform/**"
+      - ".github/workflows/**"
       - "docs/shared-infrastructure-contract.md"
       - ".github/scripts/terraform_matrix.py"
       - ".github/workflows/terraform-pr.yml"
