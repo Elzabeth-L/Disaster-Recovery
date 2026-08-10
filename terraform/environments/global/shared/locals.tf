@@ -240,6 +240,7 @@ locals {
     "ec2:CreateTags",
     "ec2:DeleteSecurityGroup",
     "ec2:GetSecurityGroupsForVpc",
+    "ec2:ModifyInstanceMetadataOptions",
     "ec2:RevokeSecurityGroupEgress",
     "ec2:RevokeSecurityGroupIngress",
     "ec2:RunInstances",
