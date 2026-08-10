@@ -16,12 +16,12 @@ The recovery point is the time **DR 2 - Drill** runs `Deploy or refresh DR appli
 
 ## One-time preparation before the meeting
 
-In GitHub, open **Actions** and run **DR 1 - Infrastructure** against `main` in this order:
+In GitHub, open **Actions** and run **DR 1 - Infrastructure** against `main` in this order. Selecting
+EKS or EC2 automatically plans and applies shared egress first when it is absent:
 
-1. `component=shared-egress`, `operation=Apply deploy`.
-2. `component=eks`, `operation=Apply deploy`.
-3. `component=ec2`, `operation=Apply deploy`.
-4. Run **DR 2 - Drill** with `operation=Deploy or refresh DR applications`.
+1. `component=eks`, `operation=Apply deploy`.
+2. `component=ec2`, `operation=Apply deploy`.
+3. Run **DR 2 - Drill** with `operation=Deploy or refresh DR applications`.
 
 Review and approve each protected environment only after its plan summary matches the expected scope. Preparation is complete when all four workflows pass and these diagnostic endpoints work:
 
@@ -112,11 +112,11 @@ The EC2 response must again show `environment=PRIMARY` and `database=connected`.
 Run these only after failback succeeds:
 
 1. **DR 2 - Drill**: `operation=Remove DR applications`, confirmation `CLEANUP_DR_APPS`.
-2. **DR 1 - Infrastructure**: `component=eks`, `operation=Apply cleanup`.
-3. **DR 1 - Infrastructure**: `component=ec2`, `operation=Apply cleanup`.
-4. **DR 1 - Infrastructure**: `component=shared-egress`, `operation=Apply cleanup`.
+2. **DR 1 - Infrastructure**: `component=eks`, `operation=Apply destroy`.
+3. **DR 1 - Infrastructure**: `component=ec2`, `operation=Apply destroy`.
+4. **DR 1 - Infrastructure**: `component=shared-egress`, `operation=Apply destroy`.
 
-Finish by running read-only cleanup plans for all three components. Each must report `No changes` with deployment disabled/cleanup selected.
+Finish by running `Plan destroy` for all three components. Each must report `No changes`.
 
 ## Short presentation script
 
