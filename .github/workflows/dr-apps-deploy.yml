@@ -1,7 +1,7 @@
-name: Deploy and seed DR applications
+name: DR internal - Deploy applications
 
 on:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

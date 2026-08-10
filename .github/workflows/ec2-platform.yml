@@ -1,4 +1,4 @@
-name: Primary EC2 platform
+name: Primary 3 - EC2 infrastructure
 
 on:
   workflow_dispatch:

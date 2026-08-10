@@ -1,7 +1,7 @@
-name: Remove DR application-layer resources
+name: DR internal - Remove applications
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       confirmation:
         description: Type CLEANUP_DR_APPS after failback

@@ -1,0 +1,51 @@
+name: DR 2 - Drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Application preparation, traffic cutover, or application cleanup
+        required: true
+        type: choice
+        options:
+          - Deploy or refresh DR applications
+          - Failover to DR
+          - Failback to primary
+          - Remove DR applications
+      confirmation:
+        description: Use DEMONSTRATE_DR for failover/failback or CLEANUP_DR_APPS for removal
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    if: inputs.operation == 'Deploy or refresh DR applications'
+    uses: ./.github/workflows/dr-apps-deploy.yml
+    secrets: inherit
+
+  failover:
+    if: inputs.operation == 'Failover to DR'
+    uses: ./.github/workflows/dr-demo.yml
+    with:
+      action: Failover
+      confirmation: ${{ inputs.confirmation }}
+    secrets: inherit
+
+  failback:
+    if: inputs.operation == 'Failback to primary'
+    uses: ./.github/workflows/dr-demo.yml
+    with:
+      action: Failback
+      confirmation: ${{ inputs.confirmation }}
+    secrets: inherit
+
+  cleanup:
+    if: inputs.operation == 'Remove DR applications'
+    uses: ./.github/workflows/dr-apps-cleanup.yml
+    with:
+      confirmation: ${{ inputs.confirmation }}
+    secrets: inherit

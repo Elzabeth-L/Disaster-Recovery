@@ -51,7 +51,7 @@ platform before demonstrations. The DR cluster remains absent until a declared d
 2. Merge this implementation only after Terraform validation, app tests, ARM64 image build, manifest
    rendering, and a speculative EKS plan pass.
 3. Review the exact resource count, add-on versions, quota checks, and Pricing Calculator estimate.
-4. Obtain explicit approval before dispatching `Primary EKS platform` with `Apply`.
+4. Obtain explicit approval before dispatching `Primary 1 - EKS infrastructure` with `Apply`.
 5. Verify control plane, two nodes, all add-ons, Pod Identity associations, NAT egress, ECR pull, and
    EBS dynamic provisioning.
 6. Dispatch the protected application workflow; verify PostgreSQL and both app replicas, CRUD data,

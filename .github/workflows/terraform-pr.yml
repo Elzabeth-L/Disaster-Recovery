@@ -1,4 +1,4 @@
-name: Terraform PR validation
+name: CI - Terraform
 
 on:
   pull_request:

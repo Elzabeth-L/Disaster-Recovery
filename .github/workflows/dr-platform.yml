@@ -1,4 +1,4 @@
-name: DR platform deploy and cleanup
+name: DR 1 - Infrastructure
 
 on:
   workflow_dispatch:
