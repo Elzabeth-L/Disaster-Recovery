@@ -103,6 +103,15 @@ data "aws_iam_policy_document" "ec2_operator" {
       variable = "ssm:resourceTag/Project"
       values   = [local.project]
     }
+
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:resourceTag/Name"
+      values = [
+        "vaultrix-dr-primary-ec2-instance",
+        "vaultrix-dr-dr-ec2-instance",
+      ]
+    }
   }
 
   statement {
