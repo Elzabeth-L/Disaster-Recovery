@@ -44,9 +44,9 @@ variable "allocated_storage" {
 }
 
 variable "engine_version" {
-  description = "PostgreSQL major engine version; AWS selects a currently supported minor release."
+  description = "Full PostgreSQL engine version supported by the selected RDS instance class and region."
   type        = string
-  default     = "16"
+  default     = "16.14"
 }
 
 variable "common_tags" {
