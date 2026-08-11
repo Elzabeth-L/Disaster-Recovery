@@ -173,6 +173,13 @@ The DR workflows move service between Mumbai and Singapore; they do not accept a
 input. Regional ALBs and networks span two AZs, and the EKS node group consumes two private subnets.
 AWS handles available in-Region capacity through those regional services.
 
+An isolated EKS node/AZ failure does not automatically change `eks.dr.vaultrix.in` to Singapore.
+The regional ALB stops sending requests to unhealthy targets, while the EKS scheduler can run or
+replace stateless application Pods on healthy nodes in the second Mumbai AZ. That second AZ is the
+normal in-Region recovery path and prevents every single-AZ fault from becoming a regional DR event.
+The operator invokes DR 2 failover only if the application remains unhealthy or the drill is meant
+to demonstrate a regional evacuation.
+
 The EC2 application itself is one instance and RDS is Single-AZ. If an instance or AZ problem makes
 the primary endpoint unhealthy, Route 53 can still select Singapore because it responds to endpoint
 health, not the cause of failure. EKS has a multi-subnet/node layout, but its single PostgreSQL EBS
@@ -180,6 +187,22 @@ volume remains AZ-bound and is not a production-grade HA database.
 
 The demo does not and cannot shut down an entire AWS Region. It demonstrates a real EC2 application
 failure by stopping the primary instance and a controlled EKS regional evacuation by changing DNS.
+
+### Workflow implementation layout
+
+The workflow YAML intentionally shows orchestration, approvals, credentials, and named recovery
+steps rather than embedding long shell programs:
+
+- `.github/scripts/dr-drill.sh` implements the Linux commands used to prepare, validate, cut over,
+  fail back, and remove DR application resources;
+- `.github/actions/terraform-init/action.yml` is the composite action that consistently initializes
+  each isolated Terraform state;
+- `.github/workflows/dr-drill.yml` and `dr-platform.yml` remain the readable control plane.
+
+Keeping operational commands in one strict-mode Bash script makes them syntax-checkable and avoids
+duplicating retry, DNS, and validation logic without hiding environment approval boundaries.
+`CI - Terraform` runs a Bash syntax check for repository workflow scripts on every relevant pull
+request.
 
 ### Failback to primary
 

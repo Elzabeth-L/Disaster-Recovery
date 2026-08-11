@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - "terraform/**"
+      - ".github/actions/**"
+      - ".github/scripts/**"
       - ".github/workflows/**"
       - "docs/shared-infrastructure-contract.md"
       - ".github/scripts/terraform_matrix.py"
@@ -17,6 +19,16 @@ permissions:
   id-token: write
 
 jobs:
+  workflow-scripts:
+    name: Validate workflow scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check Bash syntax
+        run: find .github/scripts -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+
   changes:
     name: Select changed Terraform roots
     runs-on: ubuntu-latest
