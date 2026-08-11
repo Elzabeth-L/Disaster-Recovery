@@ -35,7 +35,9 @@ jobs:
         uses: azure/setup-kubectl@c0c8b32d33a5244f1e5947304550403b63930415 # v4
 
       - name: Capture primary notes snapshot
-        run: bash .github/scripts/dr-drill.sh capture-eks-snapshot
+        uses: ./.github/actions/dr-drill
+        with:
+          command: capture-eks-snapshot
 
       - name: Configure primary EKS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
@@ -46,7 +48,9 @@ jobs:
 
       - name: Discover primary image digest
         id: image
-        run: bash .github/scripts/dr-drill.sh discover-primary-image
+        uses: ./.github/actions/dr-drill
+        with:
+          command: discover-primary-image
 
       - name: Configure DR EKS credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
@@ -59,17 +63,27 @@ jobs:
         uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
 
       - name: Connect to DR cluster and install load balancer controller
-        run: bash .github/scripts/dr-drill.sh install-load-balancer-controller
+        uses: ./.github/actions/dr-drill
+        with:
+          command: install-load-balancer-controller
 
       - name: Create DR database credentials
-        run: bash .github/scripts/dr-drill.sh create-eks-database-secret
+        uses: ./.github/actions/dr-drill
+        with:
+          command: create-eks-database-secret
 
       - name: Deploy immutable image and wait for DR ALB
         id: alb
-        run: bash .github/scripts/dr-drill.sh deploy-eks '${{ steps.image.outputs.digest }}'
+        uses: ./.github/actions/dr-drill
+        with:
+          command: deploy-eks
+          argument: ${{ steps.image.outputs.digest }}
 
       - name: Seed notes snapshot and publish diagnostic DNS
-        run: bash .github/scripts/dr-drill.sh seed-eks '${{ steps.alb.outputs.hostname }}'
+        uses: ./.github/actions/dr-drill
+        with:
+          command: seed-eks
+          argument: ${{ steps.alb.outputs.hostname }}
 
   deploy-ec2:
     name: Seed and validate DR EC2 tasks
@@ -81,7 +95,9 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Capture primary tasks snapshot
-        run: bash .github/scripts/dr-drill.sh capture-ec2-snapshot
+        uses: ./.github/actions/dr-drill
+        with:
+          command: capture-ec2-snapshot
 
       - name: Configure DR EC2 credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
@@ -91,7 +107,9 @@ jobs:
           role-session-name: dr-app-ec2-${{ github.run_id }}
 
       - name: Wait for DR application and seed tasks
-        run: bash .github/scripts/dr-drill.sh seed-ec2
+        uses: ./.github/actions/dr-drill
+        with:
+          command: seed-ec2
 
   confirm-cutover:
     name: Validate failover or failback confirmation
@@ -119,7 +137,10 @@ jobs:
           role-session-name: dr-demo-eks-${{ github.run_id }}
 
       - name: Validate DR EKS and switch DNS
-        run: bash .github/scripts/dr-drill.sh cutover-eks '${{ inputs.operation }}'
+        uses: ./.github/actions/dr-drill
+        with:
+          command: cutover-eks
+          argument: ${{ inputs.operation }}
 
   cutover-ec2:
     name: EC2 automatic health-check cutover
@@ -139,7 +160,9 @@ jobs:
           role-session-name: dr-demo-ec2-dr-${{ github.run_id }}
 
       - name: Validate DR EC2 before cutover
-        run: bash .github/scripts/dr-drill.sh validate-dr-ec2
+        uses: ./.github/actions/dr-drill
+        with:
+          command: validate-dr-ec2
 
       - name: Configure primary EC2 credentials
         uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
@@ -150,11 +173,17 @@ jobs:
 
       - name: Stop primary and prove automatic failover
         if: inputs.operation == 'Failover to DR'
-        run: bash .github/scripts/dr-drill.sh cutover-ec2 'Failover to DR'
+        uses: ./.github/actions/dr-drill
+        with:
+          command: cutover-ec2
+          argument: Failover to DR
 
       - name: Start primary and prove automatic failback
         if: inputs.operation == 'Failback to primary'
-        run: bash .github/scripts/dr-drill.sh cutover-ec2 'Failback to primary'
+        uses: ./.github/actions/dr-drill
+        with:
+          command: cutover-ec2
+          argument: Failback to primary
 
   cleanup-eks:
     name: Remove DR EKS application resources
@@ -182,7 +211,11 @@ jobs:
           role-session-name: dr-app-cleanup-${{ github.run_id }}
 
       - name: Remove Kubernetes workload and ALB
-        run: bash .github/scripts/dr-drill.sh cleanup-eks-workload
+        uses: ./.github/actions/dr-drill
+        with:
+          command: cleanup-eks-workload
 
       - name: Remove diagnostic EKS DNS records
-        run: bash .github/scripts/dr-drill.sh cleanup-eks-dns
+        uses: ./.github/actions/dr-drill
+        with:
+          command: cleanup-eks-dns

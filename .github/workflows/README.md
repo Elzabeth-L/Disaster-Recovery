@@ -193,8 +193,10 @@ failure by stopping the primary instance and a controlled EKS regional evacuatio
 The workflow YAML intentionally shows orchestration, approvals, credentials, and named recovery
 steps rather than embedding long shell programs:
 
-- `.github/scripts/dr-drill.sh` implements the Linux commands used to prepare, validate, cut over,
-  fail back, and remove DR application resources;
+- `.github/actions/dr-drill/action.yml` gives workflow steps a small composite-action interface and
+  forwards named operations and outputs without embedding Bash in workflow YAML;
+- `.github/scripts/dr-drill.sh` implements the Linux commands used by that composite action to
+  prepare, validate, cut over, fail back, and remove DR application resources;
 - `.github/actions/terraform-init/action.yml` is the composite action that consistently initializes
   each isolated Terraform state;
 - `.github/workflows/dr-drill.yml` and `dr-platform.yml` remain the readable control plane.
