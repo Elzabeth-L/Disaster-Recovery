@@ -41,7 +41,7 @@ resource "aws_security_group_rule" "alb_ingress_http" {
 }
 
 resource "aws_security_group_rule" "alb_egress_app" {
-  type              = "ingress" # outbound forward to app port
+  type              = "egress"
   from_port         = var.app_port
   to_port           = var.app_port
   protocol          = "tcp"
