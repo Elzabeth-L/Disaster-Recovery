@@ -10,7 +10,7 @@
     --accent-purple: #a371f7;
     --accent-orange: #d29922;
     --accent-red: #f85149;
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 * {
