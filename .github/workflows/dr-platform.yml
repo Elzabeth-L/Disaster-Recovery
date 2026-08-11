@@ -12,7 +12,7 @@ on:
         description: Plan is read-only; Apply uses the exact saved plan
         required: true
         type: choice
-        options: [Plan deploy, Apply deploy, Plan cleanup, Apply cleanup]
+        options: [Plan deploy, Apply deploy, Plan destroy, Apply destroy]
 
 permissions:
   contents: read
@@ -23,7 +23,122 @@ env:
   TF_INPUT: "false"
 
 jobs:
+  shared-egress-plan:
+    name: Ensure shared DR egress
+    if: inputs.component != 'shared-egress' && endsWith(inputs.operation, 'deploy')
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
+    defaults:
+      run:
+        working-directory: terraform/environments/dr/shared
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure shared plan credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_SHARED_PLAN_ROLE_ARN }}
+          aws-region: ap-southeast-1
+          role-session-name: dr-shared-prerequisite-plan-${{ github.run_id }}
+
+      - name: Initialize shared DR state
+        run: |
+          terraform init \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=dr/shared/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Plan shared egress prerequisite
+        id: plan
+        shell: bash
+        run: |
+          set +e
+          terraform plan -lock=false -detailed-exitcode -out=shared-egress.tfplan \
+            -var=expected_aws_account_id=598120810297 \
+            -var=cost_acknowledgement=APPROVE_DR_DRILL_COSTS \
+            -var=owner=Elzabeth-L \
+            -var=recovery_egress_enabled=true
+          exit_code=$?
+          set -e
+
+          case "${exit_code}" in
+            0) echo 'has_changes=false' >> "${GITHUB_OUTPUT}" ;;
+            2) echo 'has_changes=true' >> "${GITHUB_OUTPUT}" ;;
+            *) exit "${exit_code}" ;;
+          esac
+
+          terraform show -no-color shared-egress.tfplan > shared-egress-plan.txt
+
+      - name: Upload shared egress prerequisite plan
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dr-shared-egress-prerequisite-${{ github.run_id }}
+          path: |
+            terraform/environments/dr/shared/shared-egress.tfplan
+            terraform/environments/dr/shared/shared-egress-plan.txt
+          retention-days: 2
+
+      - name: Publish shared egress plan summary
+        run: cat shared-egress-plan.txt >> "${GITHUB_STEP_SUMMARY}"
+
+  shared-egress-apply:
+    name: Apply shared DR egress when required
+    if: inputs.operation == 'Apply deploy' && needs.shared-egress-plan.outputs.has_changes == 'true'
+    needs: shared-egress-plan
+    runs-on: ubuntu-latest
+    environment: shared-apply
+    defaults:
+      run:
+        working-directory: terraform/environments/dr/shared
+    steps:
+      - name: Check out exact repository revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure shared apply credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_SHARED_APPLY_ROLE_ARN }}
+          aws-region: ap-southeast-1
+          role-session-name: dr-shared-prerequisite-apply-${{ github.run_id }}
+
+      - name: Initialize shared DR state
+        run: |
+          terraform init \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=dr/shared/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Download exact shared egress plan
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: dr-shared-egress-prerequisite-${{ github.run_id }}
+          path: terraform/environments/dr/shared
+
+      - name: Apply exact shared egress plan
+        run: terraform apply -auto-approve shared-egress.tfplan
+
   plan:
+    needs: [shared-egress-plan, shared-egress-apply]
+    if: >-
+      always() &&
+      (needs.shared-egress-plan.result == 'success' || needs.shared-egress-plan.result == 'skipped') &&
+      (needs.shared-egress-apply.result == 'success' || needs.shared-egress-apply.result == 'skipped')
     runs-on: ubuntu-latest
     outputs:
       tf_root: ${{ steps.config.outputs.tf_root }}
@@ -79,7 +194,7 @@ jobs:
         shell: bash
         run: |
           enabled=true
-          [[ "${{ inputs.operation }}" == *cleanup ]] && enabled=false
+          [[ "${{ inputs.operation }}" == *destroy ]] && enabled=false
           args=(
             -lock=false
             -out=dr.tfplan
