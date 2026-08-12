@@ -1,1 +1,206 @@
-@.github/workflows/terraform-pr.yml
+name: CI - Terraform
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+      - ".github/actions/**"
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+      - "docs/shared-infrastructure-contract.md"
+      - ".github/scripts/terraform_matrix.py"
+      - ".github/workflows/terraform-pr.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  workflow-scripts:
+    name: Validate workflow scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Check Bash syntax
+        run: find .github/scripts -type f -name '*.sh' -print0 | xargs -0 -r -n1 bash -n
+
+      - name: Test DR drill helpers
+        run: bash .github/scripts/test-dr-drill.sh
+
+  changes:
+    name: Select changed Terraform roots
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has_roots: ${{ steps.matrix.outputs.has_roots }}
+      ec2_consumer: ${{ steps.matrix.outputs.ec2_consumer }}
+      eks_consumer: ${{ steps.matrix.outputs.eks_consumer }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Build validation matrix
+        id: matrix
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ -n "${BASE_SHA}" && -n "${HEAD_SHA}" ]]; then
+            git diff --name-only "${BASE_SHA}" "${HEAD_SHA}" > "${RUNNER_TEMP}/changed-paths.txt"
+          else
+            printf '%s\n' '.github/workflows/terraform-pr.yml' > "${RUNNER_TEMP}/changed-paths.txt"
+          fi
+          matrix="$(python .github/scripts/terraform_matrix.py < "${RUNNER_TEMP}/changed-paths.txt")"
+          has_roots="$(python -c 'import json,sys; print(str(bool(json.load(sys.stdin)["include"])).lower())' <<< "${matrix}")"
+          ec2_consumer="$(python -c 'import json,sys; print(str(any(item["name"] == "primary-ec2" for item in json.load(sys.stdin)["include"])).lower())' <<< "${matrix}")"
+          eks_consumer="$(python -c 'import json,sys; print(str(any(item["name"] == "primary-eks" for item in json.load(sys.stdin)["include"])).lower())' <<< "${matrix}")"
+          echo "matrix=${matrix}" >> "${GITHUB_OUTPUT}"
+          echo "has_roots=${has_roots}" >> "${GITHUB_OUTPUT}"
+          echo "ec2_consumer=${ec2_consumer}" >> "${GITHUB_OUTPUT}"
+          echo "eks_consumer=${eks_consumer}" >> "${GITHUB_OUTPUT}"
+
+  validate:
+    name: Validate ${{ matrix.name }}
+    needs: changes
+    if: needs.changes.outputs.has_roots == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.path }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+
+      - name: Initialize without remote backend
+        run: terraform init -backend=false -input=false
+
+      - name: Validate configuration
+        run: terraform validate -no-color
+
+  ec2-consumer-plan:
+    name: Plan primary EC2 platform
+    needs:
+      - changes
+      - validate
+    if: needs.changes.outputs.ec2_consumer == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/primary/ec2
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure short-lived EC2 plan credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_EC2_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: phase6-ec2-plan-${{ github.run_id }}
+
+      - name: Prove cross-owner EKS state is denied
+        run: |
+          if aws s3api head-object \
+            --bucket vaultrix-dr-598120810297-tfstate \
+            --key primary/eks/terraform.tfstate 2>/dev/null; then
+            echo "EC2 plan role unexpectedly read the EKS state object." >&2
+            exit 1
+          fi
+          echo "EC2 plan role cannot read the primary EKS state object, as required."
+
+      - name: Initialize isolated EC2 state
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=primary/ec2/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Produce speculative cost-bearing plan
+        id: ec2_plan
+        shell: bash
+        run: |
+          set -o pipefail
+          terraform plan -input=false -lock=false -no-color \
+            -var="expected_aws_account_id=598120810297" \
+            -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
+            -var="state_region=ap-south-1" \
+            -var="cost_acknowledgement=APPROVE_PRIMARY_EC2_COSTS" \
+            2>&1 | tee ec2-plan.log
+
+      - name: Upload EC2 plan diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: primary-ec2-plan-diagnostics-${{ github.run_id }}
+          path: terraform/environments/primary/ec2/ec2-plan.log
+          if-no-files-found: error
+          retention-days: 2
+
+  primary-eks-plan:
+    name: Plan primary EKS (cost gate enabled)
+    needs:
+      - changes
+      - validate
+    if: needs.changes.outputs.eks_consumer == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/primary/eks
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Configure short-lived EKS plan credentials
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
+        with:
+          role-to-assume: ${{ vars.AWS_EKS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_PRIMARY_REGION }}
+          role-session-name: phase7a-eks-plan-${{ github.run_id }}
+
+      - name: Initialize isolated EKS state
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+            -backend-config="key=primary/eks/terraform.tfstate" \
+            -backend-config="region=ap-south-1" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
+
+      - name: Produce speculative cost-bearing plan
+        run: |
+          terraform plan -input=false -lock=false -no-color \
+            -var="expected_aws_account_id=598120810297" \
+            -var="state_bucket=vaultrix-dr-598120810297-tfstate" \
+            -var="deployment_enabled=true" \
+            -var="cost_acknowledgement=APPROVE_PRIMARY_EKS_COSTS"
