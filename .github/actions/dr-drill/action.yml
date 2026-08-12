@@ -1,0 +1,35 @@
+name: Run DR drill operation
+description: Execute one named DR application preparation, cutover, or cleanup operation.
+
+inputs:
+  command:
+    description: Command exposed by the DR drill implementation.
+    required: true
+  argument:
+    description: Optional immutable digest, ALB hostname, or drill operation passed to the command.
+    required: false
+    default: ""
+
+outputs:
+  digest:
+    description: Immutable primary EKS application image digest, when discovered.
+    value: ${{ steps.execute.outputs.digest }}
+  hostname:
+    description: DR EKS ALB hostname, when provisioned.
+    value: ${{ steps.execute.outputs.hostname }}
+
+runs:
+  using: composite
+  steps:
+    - name: Execute ${{ inputs.command }}
+      id: execute
+      shell: bash
+      env:
+        DR_COMMAND: ${{ inputs.command }}
+        DR_ARGUMENT: ${{ inputs.argument }}
+      run: |
+        if [[ -n "${DR_ARGUMENT}" ]]; then
+          bash "${GITHUB_ACTION_PATH}/../../scripts/dr-drill.sh" "${DR_COMMAND}" "${DR_ARGUMENT}"
+        else
+          bash "${GITHUB_ACTION_PATH}/../../scripts/dr-drill.sh" "${DR_COMMAND}"
+        fi

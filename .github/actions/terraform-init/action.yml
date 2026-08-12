@@ -1,0 +1,23 @@
+name: Initialize project Terraform state
+description: Initialize an isolated Terraform root with the project S3 backend.
+
+inputs:
+  terraform-root:
+    description: Terraform root directory, relative to the repository root.
+    required: true
+  state-key:
+    description: S3 backend key for the isolated Terraform state.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Initialize Terraform backend
+      shell: bash
+      run: |
+        terraform -chdir="${GITHUB_WORKSPACE}/${{ inputs.terraform-root }}" init \
+          -backend-config="bucket=vaultrix-dr-598120810297-tfstate" \
+          -backend-config="key=${{ inputs.state-key }}" \
+          -backend-config="region=ap-south-1" \
+          -backend-config="encrypt=true" \
+          -backend-config="use_lockfile=true"
