@@ -1,0 +1,1 @@
+@.github/scripts/test-dr-drill.sh
